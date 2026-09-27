@@ -1,0 +1,164 @@
+/* PLATAFORMA : Usuario V6 — capa formal (maqueta Día/Noche 27-sep-2026)
+   Se carga AL FINAL: gana a styles.css (legacy) y a v6.css sin tocarlos.
+   Día = blanco/negro + verde (estilo MiniMkt). Noche = paleta Vidu actual,
+   solo cambia el formato (header en filas, categorías como pestañas). */
+
+/* ═══════════ Formato común (Día y Noche) ═══════════ */
+
+/* Control de radio dentro de su tarjeta: styles.css le pone
+   position:absolute + left:50% + translateX(-50%) y se sale de la tarjeta. */
+.md-cpanel .map-radio-floating{
+  position:static!important;left:auto!important;top:auto!important;transform:none!important;
+  width:100%!important;padding:0!important;background:none!important;border:0!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.md-cpanel .map-radio-floating input[type=range]{width:100%!important;flex:1;margin:0!important}
+
+/* Campana y carrito del header */
+.md-header-bell{
+  position:relative;flex:none;width:36px;height:36px;border-radius:50%;
+  display:grid;place-items:center;font-size:16px;color:var(--txt-2);
+}
+.md-header-bell-badge{
+  position:absolute;top:2px;right:0;min-width:16px;height:16px;padding:0 4px;border-radius:8px;
+  display:grid;place-items:center;font-size:9px;font-weight:800;color:#fff;background:#e5484d;
+}
+.md-header-bell-badge[hidden]{display:none}
+
+/* styles.css (skin Vidu) fija header{height:56px!important;padding:0 20px!important;
+   overflow:hidden} y .logo-text{color:var(--accent)!important}: hay que ganarle
+   con !important o se recortan el buscador y las categorías. */
+.md-header-v6{
+  height:calc(var(--head-h) + env(safe-area-inset-top))!important;
+  min-height:0!important;overflow:visible!important;
+}
+.md-header-v6::after{display:none!important}
+.md-header-v6 .logo-text{font-size:19px!important;letter-spacing:-.3px!important}
+.md-header-v6 .md-header-avatar,.md-header-v6 .md-header-bell{min-height:0!important}
+
+/* Header en filas (móvil): logo + iconos · buscador · categorías */
+@media (max-width:820px){
+  :root{--head-h:140px}
+  .md-header-v6{
+    flex-wrap:wrap!important;align-content:flex-start;align-items:center;gap:10px 6px;
+    padding:calc(env(safe-area-inset-top) + 10px) 16px 0!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  }
+  .md-logo{order:1}
+  .md-logo .logo-text{display:block}
+  #v6Cart{order:2;margin-left:auto}
+  #v6Bell{order:3}
+  .md-header-avatar{order:4;margin-left:4px;width:32px;height:32px;font-size:12px}
+  .md-search-wrap{order:5;flex:1 1 100%;max-width:none;min-width:0}
+  #headerSearchInput{height:40px;border-radius:10px;padding:0 14px}
+  #catNav.md-cat-nav-v6{order:6;flex:1 1 100%;gap:20px!important;margin:0 -16px!important;padding:0 16px!important}
+}
+/* .category-nav legacy trae fondo slate ([data-theme].theme-dia nav.category-nav,
+   especificidad 0,3,1), padding y wrap: se usa el id para ganarle. */
+#catNav.md-cat-nav-v6{
+  background:none!important;border:0!important;box-shadow:none!important;
+  flex-wrap:nowrap!important;justify-content:flex-start!important;overflow-x:auto!important;height:auto!important;min-height:0!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+
+/* Categorías: pestañas de texto con subrayado, sin píldoras de color */
+.md-cat-nav-v6 .cat-tab{
+  padding:0 0 10px!important;border:0!important;border-bottom:2px solid transparent!important;
+  border-radius:0!important;background:none!important;box-shadow:none!important;
+  color:var(--txt-3)!important;font-size:13px!important;font-weight:500!important;min-height:0!important;
+}
+.md-cat-nav-v6 .cat-tab:hover{background:none!important}
+.md-cat-nav-v6 .cat-tab.active{color:var(--txt)!important;font-weight:700!important;border-bottom-color:var(--accent)!important}
+.md-cat-nav-v6 .cat-tab.proximamente{flex-direction:row;align-items:baseline;gap:5px}
+
+/* Publicidad: línea de texto, sin fondos de color */
+.md-ads-fixed{background:var(--bg)!important;border-bottom:1px solid var(--card-brd)!important}
+.md-ads-tag{background:none!important;padding:0 4px!important}
+.md-ads-fixed .ad{background:none!important;border:0!important;padding:4px 8px 4px 0!important}
+
+/* ═══════════ DÍA formal (blanco / negro / verde) ═══════════
+   html[data-theme].theme-dia (0,2,1) gana a [data-theme="dark"].theme-dia
+   (0,2,0) de styles.css, que pisaba --bg/--card con el slate viejo. */
+html[data-theme].theme-dia{
+  --bg:#FFFFFF; --bg-chrome:#FFFFFF; --surface:#FFFFFF;
+  --card:#FFFFFF; --card-brd:#EDEEF2;
+  --txt:#14161C; --txt-2:#5C6270; --txt-3:#9297A3;
+  --accent:#1F9254; --calipso:#14161C; --ok:#1F9254;
+  --card2:#F5F6F8; --border:#EDEEF2; --border2:#E1E4EA;
+  --text:#14161C; --text2:#5C6270; --muted:#9297A3;
+  color-scheme:light;
+}
+html.theme-dia body{background:#FFFFFF!important;color:#14161C}
+
+/* Header */
+html.theme-dia .md-header-v6{background:#FFFFFF!important;border-bottom:1px solid #EDEEF2!important}
+html.theme-dia .md-header-v6 .logo-text{color:#14161C!important;-webkit-text-fill-color:#14161C!important}
+html.theme-dia .md-logo-mark{background:#14161C;color:#fff;border-radius:8px;width:30px;height:30px;font-size:15px}
+html.theme-dia #headerSearchInput{background:#F5F6F8;border:1px solid #E9EBEF;color:#14161C}
+html.theme-dia #headerSearchInput::placeholder{color:#8A8F9C}
+html.theme-dia .md-header-bell{color:#5C6270}
+html.theme-dia .md-header-avatar{background:#EEF0F3;border:1px solid #E1E4EA;color:#5C6270}
+html.theme-dia .md-header-avatar::after{display:none}
+html.theme-dia .md-cat-nav-v6 .cat-tab.active{border-bottom-color:#14161C!important}
+html.theme-dia .cat-tab.proximamente .cat-soon{color:#9297A3}
+
+/* Publicidad */
+html.theme-dia .md-ads-fixed{background:#FFFFFF!important;border-bottom:1px solid #EDEEF2!important}
+html.theme-dia .md-ads-tag{color:#9297A3}
+html.theme-dia .ad-t{color:#4A4F5B}
+html.theme-dia .ad-cta{color:#1F9254}
+
+/* Mapa */
+html.theme-dia #map,html.theme-dia .md-map-v6{background:#F7F8FA!important}
+html.theme-dia .leaflet-bar a,
+html.theme-dia .leaflet-control-zoom a{background:#FFFFFF!important;color:#5C6270!important;border-color:#E1E4EA!important}
+
+/* Hoja inferior y tarjetas */
+html.theme-dia .md-bottom-sheet{
+  background:#FFFFFF;border-top:1px solid #EDEEF2;box-shadow:0 -6px 24px rgba(20,22,28,.08);
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+html.theme-dia .md-sheet-grabber::before{background:#E1E4EA}
+html.theme-dia .md-cpanel{background:#FFFFFF;border:1px solid #EDEEF2;box-shadow:none}
+html.theme-dia .md-cpanel.ad-card{background:#FFFFFF;border-color:#EDEEF2}
+html.theme-dia .adx-t,html.theme-dia .cp-big{color:#14161C}
+html.theme-dia .adx-cta{color:#1F9254}
+html.theme-dia .cp-chip{background:#F5F6F8;border:1px solid #EDEEF2;color:#14161C}
+html.theme-dia .cp-radio-val span{color:#14161C}
+html.theme-dia .cp-gps{background:#F5F6F8;border-color:#EDEEF2}
+html.theme-dia .cp-gps.off{background:#FDF3F3;border-color:#F4D6D7}
+html.theme-dia .gps-txt b{color:#1F9254}
+html.theme-dia .gps-cta{color:#14161C}
+html.theme-dia input[type=range]{background:#E9EBEF!important}
+html.theme-dia input[type=range]::-webkit-slider-thumb{background:#14161C;border-color:#FFFFFF}
+html.theme-dia input[type=range]::-moz-range-thumb{background:#14161C;border-color:#FFFFFF}
+html.theme-dia .rc{background:#FFFFFF;border-color:#EDEEF2;border-left-color:#1F9254}
+html.theme-dia .rc-price,html.theme-dia .nr-r.price{color:#14161C}
+
+/* Nav inferior: 5 pestañas sobrias, Lila sin brillo */
+html.theme-dia .md-bottom-nav{background:#FFFFFF;border-top:1px solid #EDEEF2;backdrop-filter:none;-webkit-backdrop-filter:none}
+html.theme-dia .md-bn-item{color:#9297A3;font-weight:500}
+html.theme-dia .md-bn-item.active{color:#14161C;font-weight:700}
+html.theme-dia .md-bn-fab{
+  width:46px;height:46px;background:#14161C!important;border:0!important;box-shadow:none!important;
+}
+
+/* ═══════════ Teselas OSM con tono formal ═══════════
+   Una sola URL (OpenStreetMap) para ambos temas; el tono lo da el filtro.
+   Noche: gris invertido (≈ dark de CartoDB). Día: monocromo claro (≈ MiniMkt). */
+#map .leaflet-tile-pane{filter:grayscale(1) invert(1) brightness(.82) contrast(.92)}
+html.theme-dia #map .leaflet-tile-pane{filter:grayscale(1) brightness(1.03) contrast(.9)}
+
+/* ═══════════ Tarjetas del carrusel: etiqueta · cifra · detalle ═══════════ */
+.md-cpanel .cp-k{margin-top:0;font-weight:600}
+.cp-resumen .cp-big{font-size:30px;margin:6px 0 2px;line-height:1}
+.cp-titulo{font-size:14px;font-weight:700;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:auto}
+.cp-resumen .cp-sub{margin-top:2px}
+.cp-near .cp-sub{margin-top:0}
+
+/* ═══════════ Sheet oculto: mapa completo hasta que haya resultados ═══════════ */
+.md-bottom-sheet.oculto{transform:translateY(calc(100% + 24px))!important;pointer-events:none;box-shadow:none!important}
+
+/* Mapa a lo ancho: styles.css reserva margin-right:76px + padding-right:18px
+   (escritorio) para el rail lateral viejo, que en V6 ya no existe. */
+.map-container.md-map-v6{margin:0!important;padding:0!important;width:auto!important}

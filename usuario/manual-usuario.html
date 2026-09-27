@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Usuario · MercaDate</title>
+<style>
+  :root{
+    --bg:#0e1117; --surface:#161b27; --card:#1c2233; --border:#2a3150;
+    --text:#f3f4f6; --muted:#9ca3af;
+    --accent:#FF8A00; --accent2:#00C4CC;
+    --role:#f0b429; --role-deep:#c98e00; --role-soft:rgba(240,180,41,.14);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6;
+  }
+  a{color:var(--accent2); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* ───────── HEADER ───────── */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:linear-gradient(135deg,var(--surface),var(--bg));
+    border-bottom:1px solid var(--border);
+    padding:14px 20px;
+  }
+  .header-row{display:flex; align-items:center; gap:14px; max-width:1280px; margin:0 auto; flex-wrap:wrap;}
+  .logo-badge{
+    width:42px; height:42px; border-radius:12px; flex:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; font-weight:800; color:#0b0f16;
+  }
+  .title-block{flex:1; min-width:180px;}
+  .title-block h1{margin:0; font-size:18px; font-weight:800; letter-spacing:.2px;}
+  .title-block .sub{font-size:12.5px; color:var(--muted);}
+  .role-pill{
+    background:linear-gradient(135deg,var(--role-deep),var(--role));
+    color:#0b0f16; font-weight:800; font-size:11.5px; letter-spacing:.06em;
+    text-transform:uppercase; padding:6px 14px; border-radius:999px; flex:none;
+  }
+  .menu-toggle{
+    display:none; background:var(--card); border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:9px 12px; cursor:pointer; font-size:15px;
+  }
+
+  /* ───────── SEARCH ───────── */
+  .search-wrap{max-width:1280px; margin:12px auto 0; padding:0 0;}
+  .search-box{
+    position:relative; display:flex; align-items:center; gap:10px;
+    background:var(--card); border:1.5px solid var(--border); border-radius:14px;
+    padding:11px 16px;
+  }
+  .search-box:focus-within{border-color:var(--role);}
+  .search-box svg{flex:none; color:var(--muted);}
+  #searchInput{
+    flex:1; background:transparent; border:none; outline:none; color:var(--text);
+    font-size:15px;
+  }
+  #searchInput::placeholder{color:var(--muted);}
+  #clearSearch{
+    display:none; background:var(--border); border:none; color:var(--text);
+    border-radius:8px; padding:5px 10px; cursor:pointer; font-size:12px; flex:none;
+  }
+  #searchInfo{
+    font-size:12.5px; color:var(--muted); margin-top:8px; min-height:18px; padding-left:4px;
+  }
+  mark.search-hit{
+    background:var(--role); color:#0b0f16; border-radius:3px; padding:0 2px;
+  }
+
+  /* ───────── LAYOUT ───────── */
+  .layout{max-width:1280px; margin:0 auto; display:flex; gap:26px; padding:22px 20px 80px; align-items:flex-start;}
+  nav.sidebar{
+    width:270px; flex:none; position:sticky; top:148px;
+    max-height:calc(100vh - 168px); overflow-y:auto;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:16px;
+  }
+  nav.sidebar h3{
+    font-size:11.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--role);
+    margin:18px 0 8px; padding-left:6px;
+  }
+  nav.sidebar h3:first-child{margin-top:0;}
+  nav.sidebar ul{list-style:none; margin:0; padding:0;}
+  nav.sidebar li{margin:1px 0;}
+  .nav-link{
+    display:block; padding:8px 10px; border-radius:9px; font-size:13.5px;
+    color:var(--text); opacity:.85; transition:.15s;
+  }
+  .nav-link:hover{background:var(--card); opacity:1; text-decoration:none;}
+  .nav-link.active{background:var(--role-soft); color:var(--role); opacity:1; font-weight:700;}
+
+  main{flex:1; min-width:0;}
+
+  .doc-section{
+    background:var(--surface); border:1px solid var(--border); border-radius:18px;
+    padding:26px 28px; margin-bottom:18px; scroll-margin-top:150px;
+  }
+  .doc-section h2{
+    margin:0 0 4px; font-size:21px; display:flex; align-items:center; gap:10px;
+  }
+  .doc-section h2 .num{
+    font-size:12px; background:var(--role); color:#0b0f16; border-radius:8px;
+    padding:3px 9px; font-weight:800;
+  }
+  .doc-section .crumb{font-size:12px; color:var(--muted); margin-bottom:16px;}
+  .doc-section h3{font-size:15.5px; color:var(--accent2); margin:22px 0 8px;}
+  .doc-section h3:first-of-type{margin-top:14px;}
+  .doc-section p{margin:6px 0 10px; color:#dbe1ea;}
+  .doc-section ul, .doc-section ol{margin:6px 0 14px; padding-left:22px; color:#dbe1ea;}
+  .doc-section li{margin:4px 0;}
+  .info-box{
+    background:var(--role-soft); border:1px solid rgba(240,180,41,.35); border-radius:12px;
+    padding:12px 16px; font-size:13.5px; margin:14px 0; color:#f3e7c9;
+  }
+  .info-box.tip::before{content:"💡 "; }
+  .info-box.warn{background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.35); color:#fecaca;}
+  .info-box.warn::before{content:"⚠️ ";}
+  .steps{list-style:none; padding:0; margin:14px 0;}
+  .steps li{
+    display:flex; gap:12px; align-items:flex-start; margin:8px 0; color:#dbe1ea; font-size:14.5px;
+  }
+  .steps li .stepnum{
+    flex:none; width:24px; height:24px; border-radius:50%; background:var(--role); color:#0b0f16;
+    font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  table{width:100%; border-collapse:collapse; margin:12px 0 18px; font-size:13.5px;}
+  th,td{border:1px solid var(--border); padding:8px 10px; text-align:left;}
+  th{background:var(--card); color:var(--accent2);}
+  .levels-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; margin:14px 0;}
+  .level-card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px;}
+  .level-card .dot{width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px;}
+  .level-card b{font-size:14px;}
+  .level-card .rg{display:block; font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .no-results{text-align:center; padding:60px 20px; color:var(--muted);}
+  .no-results .big{font-size:42px; margin-bottom:10px;}
+  footer{
+    text-align:center; padding:26px 20px 50px; color:var(--muted); font-size:12.5px; border-top:1px solid var(--border);
+  }
+  footer b{color:var(--text);}
+
+  @media (max-width:880px){
+    .menu-toggle{display:inline-block;}
+    nav.sidebar{
+      position:fixed; top:0; left:0; bottom:0; width:78%; max-width:320px;
+      height:100vh; max-height:100vh; z-index:90; transform:translateX(-105%);
+      transition:transform .25s ease; border-radius:0; top:0;
+    }
+    nav.sidebar.open{transform:translateX(0);}
+    .layout{flex-direction:column;}
+    .sidebar-overlay{
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:80;
+    }
+    .sidebar-overlay.show{display:block;}
+    .doc-section{padding:20px 18px; scroll-margin-top:190px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <button class="menu-toggle" id="menuToggle" aria-label="Abrir índice">☰</button>
+    <div class="logo-badge">M</div>
+    <div class="title-block">
+      <h1>Manual de Usuario</h1>
+      <div class="sub">MercaDate · El mejor precio, a la vuelta de la esquina</div>
+    </div>
+    <span class="role-pill">👤 Usuario</span>
+  </div>
+  <div class="search-wrap">
+    <div class="search-box">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Buscar una función… (ej: favoritos, GPS, puntos, boleta)">
+      <button id="clearSearch">Limpiar ✕</button>
+    </div>
+    <div id="searchInfo"></div>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="overlay"></div>
+
+<div class="layout">
+
+  <nav class="sidebar" id="sidebar">
+    <h3>Primeros pasos</h3>
+    <ul>
+      <li><a class="nav-link" href="#bienvenida">1. Bienvenida</a></li>
+      <li><a class="nav-link" href="#acceso">2. Acceso y registro</a></li>
+    </ul>
+    <h3>Buscar y comparar</h3>
+    <ul>
+      <li><a class="nav-link" href="#busqueda">3. Búsqueda y filtrado</a></li>
+      <li><a class="nav-link" href="#gps">4. GPS y localización</a></li>
+      <li><a class="nav-link" href="#mapa">5. Mapa interactivo</a></li>
+      <li><a class="nav-link" href="#resultados">6. Panel de resultados</a></li>
+      <li><a class="nav-link" href="#detalle">7. Detalle de comercio</a></li>
+      <li><a class="nav-link" href="#reportar">8. Reportar un precio</a></li>
+    </ul>
+    <h3>Tu actividad</h3>
+    <ul>
+      <li><a class="nav-link" href="#favoritos-alertas">9. Favoritos y alertas</a></li>
+      <li><a class="nav-link" href="#registro-qr">10. Registrar visita (QR)</a></li>
+      <li><a class="nav-link" href="#carrito">11. Carrito de compra</a></li>
+      <li><a class="nav-link" href="#niveles">12. Niveles y puntos</a></li>
+    </ul>
+    <h3>Mi Cuenta</h3>
+    <ul>
+      <li><a class="nav-link" href="#perfil">13. Perfil y avatar</a></li>
+      <li><a class="nav-link" href="#compras">14. Mis compras</a></li>
+      <li><a class="nav-link" href="#seguridad">15. Seguridad</a></li>
+      <li><a class="nav-link" href="#resenas">16. Reseñas</a></li>
+      <li><a class="nav-link" href="#mc-favoritos">17. Favoritos (Mi Cuenta)</a></li>
+      <li><a class="nav-link" href="#mc-alertas">18. Alertas de precio</a></li>
+      <li><a class="nav-link" href="#avisos">19. Avisos</a></li>
+      <li><a class="nav-link" href="#ayuda">20. Ayuda y soporte</a></li>
+      <li><a class="nav-link" href="#acerca">21. Acerca de MercaDate</a></li>
+      <li><a class="nav-link" href="#configuracion">22. Configuración</a></li>
+    </ul>
+    <h3>Más</h3>
+    <ul>
+      <li><a class="nav-link" href="#faq">23. Preguntas frecuentes</a></li>
+      <li><a class="nav-link" href="#contacto">24. Contacto</a></li>
+    </ul>
+  </nav>
+
+  <main id="content">
+
+    <section class="doc-section" id="bienvenida">
+      <h2><span class="num">1</span> Bienvenida</h2>
+      <div class="crumb">Primeros pasos</div>
+      <p><b>¿Qué es MercaDate?</b> Es una plataforma gratuita que te ayuda a encontrar los mejores precios
+      de combustibles, productos de almacén, servicios y gastronomía cerca de ti, con información
+      actualizada y aportada también por la comunidad de usuarios.</p>
+      <p><b>¿Qué puedes hacer en la app?</b></p>
+      <ul>
+        <li>Buscar precios de combustible en estaciones cercanas, ordenados por precio o distancia.</li>
+        <li>Ver comercios locales con fotos, precios y datos de contacto.</li>
+        <li>Reportar un precio que veas distinto al de la app y ganar puntos.</li>
+        <li>Guardar favoritos y recibir alertas cuando bajen de precio.</li>
+        <li>Registrar tus visitas escaneando un código QR y subir de nivel.</li>
+        <li>Acceder a beneficios y descuentos de marcas aliadas.</li>
+      </ul>
+      <div class="info-box tip">Todo el uso básico de MercaDate es 100% gratuito para el usuario final.</div>
+    </section>
+
+    <section class="doc-section" id="acceso">
+      <h2><span class="num">2</span> Acceso y registro</h2>
+      <div class="crumb">Primeros pasos</div>
+      <h3>Crear una cuenta</h3>
+      <ol>
+        <li>Abre la app o entra a la web de MercaDate.</li>
+        <li>Toca "Registrarme" en la pantalla de bienvenida.</li>
+        <li>Completa nombre, email y contraseña (o usa tu cuenta de Google).</li>
+        <li>Acepta los Términos y Condiciones (la casilla no viene marcada por defecto).</li>
+        <li>Confirma tu correo si se solicita.</li>
+      </ol>
+      <h3>Iniciar sesión</h3>
+      <p>Ingresa tu correo y contraseña, o entra directo con Google. La app recuerda tu sesión:
+      no necesitas loguear cada vez que abres MercaDate.</p>
+      <h3>¿Olvidaste tu contraseña?</h3>
+      <ol>
+        <li>Toca "¿Olvidaste tu contraseña?" en la pantalla de inicio de sesión.</li>
+        <li>Ingresa tu correo registrado.</li>
+        <li>Recibirás un email con instrucciones para crear una nueva.</li>
+      </ol>
+      <div class="info-box">Tu sesión es segura: usamos cookies protegidas y, en la app móvil, un token
+      adicional. Si cierras sesión en un dispositivo, los demás no se ven afectados.</div>
+    </section>
+
+    <section class="doc-section" id="busqueda">
+      <h2><span class="num">3</span> Búsqueda y filtrado</h2>
+      <div class="crumb">Buscar y comparar</div>
+      <p><b>¿Qué es?</b> El sistema principal para encontrar combustibles y comercios cerca de ti.</p>
+      <p><b>¿Cómo se activa?</b> Selecciona una categoría en la barra superior de la pantalla principal
+      (Combustibles está siempre activo; otras categorías —Almacenes, Supermercados, Restaurantes,
+      Servicios— se van habilitando progresivamente).</p>
+      <p><b>¿Qué hace?</b></p>
+      <ul>
+        <li>Para combustibles: elige el tipo — Gasolina 93, 95, 97, Diésel o Parafina (con o sin aditivo).</li>
+        <li>Ajusta el radio de búsqueda con el control deslizante: desde 500 metros hasta varios kilómetros (por defecto, 1 km / 10 cuadras).</li>
+        <li>Presiona <b>Buscar</b> para ver resultados actualizados en el mapa y en la lista lateral.</li>
+        <li>Ordena los resultados por <b>Precio</b> (menor a mayor) o por <b>Distancia</b> (más cercano primero).</li>
+        <li>Filtros avanzados: marca de estación, región, comuna o una dirección específica escrita a mano.</li>
+      </ul>
+      <div class="info-box tip">Si no activas el GPS ni escribes una dirección, la app te guía con un
+      mensaje paso a paso para que sepas qué hacer primero.</div>
+    </section>
+
+    <section class="doc-section" id="gps">
+      <h2><span class="num">4</span> GPS y localización</h2>
+      <div class="crumb">Buscar y comparar</div>
+      <p><b>¿Qué es?</b> La función que usa tu ubicación real para mostrarte resultados ordenados por
+      cercanía y centrar el mapa donde estás.</p>
+      <p><b>¿Cómo se activa?</b> Botón <b>GPS</b> en la esquina superior derecha de la pantalla de
+      búsqueda.</p>
+      <p><b>¿Qué hace?</b></p>
+      <ul>
+        <li>Pide permiso de ubicación al navegador o la app la primera vez.</li>
+        <li>Si ya diste el permiso antes, se activa automáticamente al abrir la app.</li>
+        <li>Tu posición aparece en el mapa como un punto identificable.</li>
+        <li>El mapa se centra y hace zoom automáticamente sobre tu ubicación.</li>
+        <li>Los resultados se reordenan al instante por distancia real desde donde estás.</li>
+        <li>Sin GPS, puedes escribir una dirección manual y buscar desde ese punto igualmente.</li>
+      </ul>
+      <div class="info-box warn">Si el GPS está apagado, el botón cambia de color para indicarte que
+      no hay ubicación activa.</div>
+    </section>
+
+    <section class="doc-section" id="mapa">
+      <h2><span class="num">5</span> Mapa interactivo</h2>
+      <div class="crumb">Buscar y comparar</div>
+      <p><b>¿Qué es?</b> La visualización geográfica de todas las estaciones y comercios encontrados.</p>
+      <p><b>¿Cómo se activa?</b> Aparece automáticamente después de cada búsqueda.</p>
+      <p><b>¿Qué hace?</b></p>
+      <ul>
+        <li>Marca cada estación o comercio con un pin que incluye nombre y precio.</li>
+        <li>El mejor precio se destaca con un ícono especial y aparece siempre por encima del resto.</li>
+        <li>Puedes hacer zoom, desplazarte y tocar cualquier marcador para ver su información.</li>
+        <li>El círculo del radio de búsqueda se dibuja alrededor de tu ubicación.</li>
+        <li>El mapa ajusta automáticamente la vista para mostrar todos los resultados encontrados.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="resultados">
+      <h2><span class="num">6</span> Panel de resultados</h2>
+      <div class="crumb">Buscar y comparar</div>
+      <p><b>¿Qué es?</b> La lista lateral con el detalle de cada estación o comercio según tu búsqueda.</p>
+      <p><b>¿Cómo se activa?</b> Aparece automáticamente debajo o al lado del mapa tras buscar.</p>
+      <p><b>¿Qué muestra cada tarjeta?</b></p>
+      <ul>
+        <li>Nombre del comercio y dirección exacta.</li>
+        <li>Distancia desde tu ubicación.</li>
+        <li>Precio actual por tipo de combustible o producto.</li>
+        <li><b>Etiqueta verde</b> ✅: precio actualizado en las últimas 24 horas.</li>
+        <li><b>Etiqueta naranja</b> ⚠️: precio con más de 24 horas sin actualizar.</li>
+        <li><b>Etiqueta azul</b> 📢: precio aportado por reporte de la comunidad.</li>
+        <li>Botón de favorito (corazón) para guardar el comercio.</li>
+      </ul>
+      <div class="info-box">Si no hay resultados en tu radio, la app te sugiere ampliar la distancia
+      de búsqueda o probar otra categoría.</div>
+    </section>
+
+    <section class="doc-section" id="detalle">
+      <h2><span class="num">7</span> Detalle de comercio</h2>
+      <div class="crumb">Buscar y comparar</div>
+      <p><b>¿Qué es?</b> La ficha completa de una estación o comercio.</p>
+      <p><b>¿Cómo se activa?</b> Toca cualquier resultado de la lista o cualquier marcador del mapa.</p>
+      <p><b>¿Qué muestra?</b></p>
+      <ul>
+        <li>Nombre, dirección, teléfono.</li>
+        <li>Botón directo a <b>WhatsApp</b> y, si está disponible, link a <b>Instagram</b>.</li>
+        <li>Todos los tipos de combustible o productos disponibles con su precio actual.</li>
+        <li>Botón "¿El precio es diferente?" para reportar (ver siguiente sección).</li>
+        <li>Botón de favorito y enlace directo a Google Maps o Waze para llegar.</li>
+        <li>Reseñas dejadas por otros usuarios.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="reportar">
+      <h2><span class="num">8</span> Reportar un precio</h2>
+      <div class="crumb">Buscar y comparar</div>
+      <p><b>¿Qué es?</b> Una forma de avisar cuando el precio que ves en el cartel del local es distinto
+      al que muestra la app.</p>
+      <p><b>¿Cómo se activa?</b> Botón "¿El precio es diferente?" dentro del detalle de cualquier comercio.</p>
+      <ol>
+        <li>Ingresa el precio que ves en el cartel del local.</li>
+        <li>Envía el reporte.</li>
+      </ol>
+      <p>El sistema guarda tu reporte y avisa al comercio para que lo confirme. Si se confirma,
+      ganas puntos y el precio de la app se actualiza para todos.</p>
+      <div class="info-box tip">Hay un límite de reportes por usuario para evitar el spam: no es necesario
+      reportar el mismo precio varias veces seguidas.</div>
+    </section>
+
+    <section class="doc-section" id="favoritos-alertas">
+      <h2><span class="num">9</span> Favoritos y alertas de precio</h2>
+      <div class="crumb">Tu actividad</div>
+      <h3>Favoritos</h3>
+      <p><b>¿Cómo se activa?</b> Toca el ícono de corazón en cualquier tarjeta de resultado o en el detalle de un comercio.</p>
+      <ul>
+        <li>Guarda ese comercio en tu lista personal.</li>
+        <li>Accede a todos tus favoritos desde Mi Cuenta → Favoritos.</li>
+        <li>Vuelve a tocar el corazón para quitarlo de la lista.</li>
+      </ul>
+      <h3>Alertas de precio</h3>
+      <p><b>¿Cómo se activa?</b> Desde un favorito, crea una alerta indicando el precio que te interesa.</p>
+      <ul>
+        <li>Recibes una notificación apenas el precio baja del valor que definiste.</li>
+        <li>Puedes tener varias alertas activas en distintos comercios.</li>
+        <li>Elimina una alerta en cualquier momento desde Mi Cuenta → Alertas.</li>
+      </ul>
+      <div class="info-box warn">Las alertas se desbloquean a partir del nivel 3 (Cazador de Precios, 501 puntos).</div>
+    </section>
+
+    <section class="doc-section" id="registro-qr">
+      <h2><span class="num">10</span> Registrar visita con QR</h2>
+      <div class="crumb">Tu actividad</div>
+      <p><b>¿Qué es?</b> Una forma de registrar tu compra real en un comercio para ganar puntos.</p>
+      <p><b>¿Cómo se activa?</b> Botón con ícono de cámara "Registrar visita" en el encabezado.</p>
+      <ol class="steps">
+        <li><span class="stepnum">1</span> Escanea el código QR que está exhibido en el local.</li>
+        <li><span class="stepnum">2</span> El sistema valida que tu ubicación coincida con la del comercio.</li>
+        <li><span class="stepnum">3</span> Toma una foto de tu boleta o sube una imagen guardada.</li>
+        <li><span class="stepnum">4</span> El sistema lee automáticamente los datos con reconocimiento de texto: RUT, número de boleta, monto y fecha.</li>
+        <li><span class="stepnum">5</span> Revisa los datos extraídos y corrígelos si algo quedó mal leído.</li>
+        <li><span class="stepnum">6</span> Confirma y registra tu compra.</li>
+      </ol>
+      <div class="info-box">La foto de la boleta no se guarda, solo se usa para leer los datos. El
+      sistema evita boletas duplicadas: no puedes registrar la misma compra dos veces.</div>
+    </section>
+
+    <section class="doc-section" id="carrito">
+      <h2><span class="num">11</span> Carrito de compra</h2>
+      <div class="crumb">Tu actividad</div>
+      <p><b>¿Qué es?</b> Una cesta para reunir productos de almacenes o comercios mientras navegas la app.</p>
+      <p><b>¿Cómo se activa?</b> Ícono de carrito en el encabezado.</p>
+      <ul>
+        <li>Acumula productos seleccionados de distintos comercios.</li>
+        <li>Muestra cantidad de items y precio total estimado.</li>
+        <li>Un contador visual indica cuántos productos tienes agregados.</li>
+        <li>Permite ajustar la cantidad de cada producto antes de continuar.</li>
+      </ul>
+      <div class="info-box tip">Esta función se sigue ampliando: no todos los comercios tienen
+      checkout disponible todavía dentro de la app.</div>
+    </section>
+
+    <section class="doc-section" id="niveles">
+      <h2><span class="num">12</span> Niveles y puntos (gamificación)</h2>
+      <div class="crumb">Tu actividad</div>
+      <p><b>¿Qué es?</b> Un sistema de recompensas por participar activamente en MercaDate.</p>
+      <p><b>¿Cómo se activa?</b> El indicador de puntos en el encabezado. Tócalo para abrir el detalle de tu nivel.</p>
+      <h3>Cómo ganas puntos</h3>
+      <table>
+        <tr><th>Acción</th><th>Puntos</th></tr>
+        <tr><td>Visita válida registrada con boleta</td><td>+10</td></tr>
+        <tr><td>Reporte de precio confirmado</td><td>+5</td></tr>
+        <tr><td>Valorar / reseñar un comercio</td><td>+5</td></tr>
+        <tr><td>Racha diaria de uso</td><td>+5</td></tr>
+        <tr><td>Misión semanal completada</td><td>+25</td></tr>
+        <tr><td>Invitar a un amigo (registra su primera boleta)</td><td>+40</td></tr>
+      </table>
+      <div class="info-box warn">Tope diario: máximo 50 puntos por día. Se reinicia a las 00:00.</div>
+      <h3>Los 3 niveles</h3>
+      <div class="levels-grid">
+        <div class="level-card"><span class="dot" style="background:#22c55e"></span><b>🟢 Explorador Novato</b><span class="rg">0 – 200 pts · búsqueda y registro de visitas</span></div>
+        <div class="level-card"><span class="dot" style="background:#eab308"></span><b>🟡 Rastreador Experto</b><span class="rg">201 – 800 pts · desbloquea favoritos</span></div>
+        <div class="level-card"><span class="dot" style="background:#f97316"></span><b>🟠 Cazador de Precios</b><span class="rg">801+ pts · desbloquea alertas y reportar precios</span></div>
+      </div>
+      <p>La ventana de nivel muestra: tu progreso hacia el siguiente nivel, puntos acumulados hoy,
+      tope diario restante y las habilidades que ya desbloqueaste.</p>
+    </section>
+
+    <section class="doc-section" id="perfil">
+      <h2><span class="num">13</span> Perfil y avatar</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <p><b>¿Cómo se activa?</b> Botón "Mi Cuenta" en el encabezado → pestaña Perfil.</p>
+      <ul>
+        <li>Edita nombre, teléfono, email y comuna.</li>
+        <li>Cambia el tema visual: Claro, Oscuro o Automático según la hora del día.</li>
+        <li>Invita amigos: copia tu email de invitación con un toque y compártelo.</li>
+        <li>Crea tu avatar combinando género, edad, tono de piel y estilo de pelo, con vista previa en vivo.</li>
+        <li>Alternativa: sube una foto de perfil en lugar de avatar.</li>
+      </ul>
+      <div class="info-box tip">Cuando un amigo invitado registra su primera boleta, tú ganas 40 puntos automáticamente.</div>
+    </section>
+
+    <section class="doc-section" id="compras">
+      <h2><span class="num">14</span> Mis Compras</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <p><b>¿Cómo se activa?</b> Mi Cuenta → pestaña Compras.</p>
+      <ul>
+        <li>Historial de tus compras registradas con QR.</li>
+        <li>Muestra fecha, comercio, monto y validación del RUT.</li>
+        <li><b>Nivel 1:</b> ver últimas 3 compras. <b>Nivel 2+:</b> ver historial completo.</li>
+        <li>Si aún no registraste compras, te invita a escanear el QR de un local.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="seguridad">
+      <h2><span class="num">15</span> Seguridad</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <p><b>¿Cómo se activa?</b> Mi Cuenta → pestaña Seguridad.</p>
+      <ul>
+        <li>Cambiar nombre de usuario (requiere tu contraseña actual).</li>
+        <li>Cambiar contraseña (requiere la actual y confirmar la nueva, mínimo 6 caracteres).</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="resenas">
+      <h2><span class="num">16</span> Reseñas</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <p><b>¿Cómo se activa?</b> Mi Cuenta → pestaña Reseñas.</p>
+      <ul>
+        <li>Escribe una reseña de un comercio con un texto de al menos 5 caracteres.</li>
+        <li>Califica con estrellas (1 a 5) y comenta tu experiencia.</li>
+        <li>Revisa el historial de tus propias reseñas publicadas.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="mc-favoritos">
+      <h2><span class="num">17</span> Favoritos (Mi Cuenta)</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <ul>
+        <li>Lista de todos los comercios que guardaste como favoritos.</li>
+        <li>Botón para eliminar cualquiera de la lista.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="mc-alertas">
+      <h2><span class="num">18</span> Alertas de precio (Mi Cuenta)</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <ul>
+        <li>Lista de todas tus alertas activas con el comercio y el precio objetivo.</li>
+        <li>Botón para eliminar cualquier alerta.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="avisos">
+      <h2><span class="num">19</span> Avisos (Notificaciones)</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <p><b>¿Cómo se activa?</b> Mi Cuenta → pestaña Avisos, o el ícono de campana en el encabezado.</p>
+      <ul>
+        <li>Avisos de: subida de nivel, límite diario de puntos alcanzado, baja de precio en un favorito, respuestas de soporte.</li>
+        <li>Un número rojo en la campana indica cuántos avisos no has leído.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="ayuda">
+      <h2><span class="num">20</span> Ayuda y soporte</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <ul>
+        <li>Enviar comentarios o sugerencias al equipo de MercaDate.</li>
+        <li>Abrir un ticket de soporte si tienes un problema.</li>
+        <li>Ver tus conversaciones anteriores con soporte y responder en el mismo hilo.</li>
+        <li>Acceso directo a Términos y Condiciones.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="acerca">
+      <h2><span class="num">21</span> Acerca de MercaDate</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <ul>
+        <li>Resumen de qué es MercaDate y cómo funciona el programa de puntos.</li>
+        <li>Enlace a la guía completa y a los Términos y Condiciones vigentes.</li>
+        <li>Datos de contacto oficiales.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="configuracion">
+      <h2><span class="num">22</span> Configuración</h2>
+      <div class="crumb">Mi Cuenta</div>
+      <p><b>¿Cómo se activa?</b> Mi Cuenta → pestaña Configuración.</p>
+      <h3>Tema visual</h3>
+      <ul>
+        <li><b>Oscuro:</b> fondo oscuro, ideal para uso nocturno.</li>
+        <li><b>Claro:</b> fondo claro, mejor visibilidad en luz natural.</li>
+        <li><b>Automático:</b> cambia según la hora del día.</li>
+      </ul>
+      <h3>Tipo de mapa</h3>
+      <ul>
+        <li>Elige entre diferentes proveedores de mapa: OpenStreetMap, etc.</li>
+        <li>Algunos mapas tienen mejor cobertura según tu región.</li>
+      </ul>
+      <h3>Asistente de voz (Lila)</h3>
+      <ul>
+        <li>Activa o desactiva el asistente de voz Lila.</li>
+        <li>Cuando está activo, el botón naranja FAB en la esquina inferior derecha da acceso directo a la burbuja de voz.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="faq">
+      <h2><span class="num">23</span> Preguntas frecuentes</h2>
+      <div class="crumb">Más</div>
+      <h3>¿MercaDate tiene costo para el usuario?</h3>
+      <p>No. El uso de la app por parte de usuarios finales es gratuito.</p>
+      <h3>¿Por qué un precio aparece en naranja?</h3>
+      <p>Porque no se ha actualizado en las últimas 24 horas. Aun así puede seguir siendo válido,
+      pero te lo señalamos para que lo tengas en cuenta.</p>
+      <h3>¿Qué pasa si reporto un precio incorrecto a propósito?</h3>
+      <p>El sistema valida los reportes y limita la cantidad que puedes enviar para evitar abusos.</p>
+      <h3>¿Puedo usar MercaDate sin GPS?</h3>
+      <p>Sí, ingresando una dirección manual en el buscador.</p>
+    </section>
+
+    <section class="doc-section" id="contacto">
+      <h2><span class="num">24</span> Contacto</h2>
+      <div class="crumb">Más</div>
+      <p>📧 contacto@mercadate.cl</p>
+      <p>🌐 www.mercadate.cl</p>
+    </section>
+
+  </main>
+</div>
+
+<div class="no-results" id="noResults" style="display:none">
+  <div class="big">🔍</div>
+  <div>No encontramos resultados para tu búsqueda.</div>
+</div>
+
+<footer>
+  <b>MercaDate</b> · Hecho en Chile 🇨🇱 · contacto@mercadate.cl · www.mercadate.cl<br>
+  Manual de Usuario — Versión 1.0 · Junio 2026
+</footer>
+
+<script>
+  // ───── Menú móvil ─────
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const menuToggle = document.getElementById('menuToggle');
+  function closeMenu(){ sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+  menuToggle.addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+  overlay.addEventListener('click', closeMenu);
+  document.querySelectorAll('.nav-link').forEach(a => a.addEventListener('click', closeMenu));
+
+  // ───── Scrollspy ─────
+  const sections = document.querySelectorAll('.doc-section');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(en => {
+      if (en.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`.nav-link[href="#${en.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-140px 0px -65% 0px' });
+  sections.forEach(s => spy.observe(s));
+
+  // ───── Buscador interno ─────
+  const input = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('clearSearch');
+  const info = document.getElementById('searchInfo');
+  const noResults = document.getElementById('noResults');
+  const content = document.getElementById('content');
+
+  function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function clearHighlights(){
+    document.querySelectorAll('mark.search-hit').forEach(m => {
+      const parent = m.parentNode;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    });
+  }
+
+  function highlight(root, q){
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        if (!node.nodeValue.toLowerCase().includes(q)) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement && node.parentElement.closest('script,style')) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    let n;
+    while (n = walker.nextNode()) nodes.push(n);
+    nodes.forEach(node => {
+      const regex = new RegExp(escapeRegExp(q), 'gi');
+      const text = node.nodeValue;
+      const frag = document.createDocumentFragment();
+      let lastIndex = 0, match;
+      while (match = regex.exec(text)) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        const mark = document.createElement('mark');
+        mark.className = 'search-hit';
+        mark.textContent = match[0];
+        frag.appendChild(mark);
+        lastIndex = match.index + match[0].length;
+      }
+      frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+
+  function runSearch(){
+    const q = input.value.trim().toLowerCase();
+    clearBtn.style.display = q ? 'inline-block' : 'none';
+    clearHighlights();
+
+    if (!q){
+      sections.forEach(s => s.style.display = '');
+      navLinks.forEach(l => l.parentElement.style.display = '');
+      info.textContent = '';
+      noResults.style.display = 'none';
+      content.style.display = '';
+      return;
+    }
+
+    let matches = 0;
+    sections.forEach(sec => {
+      const isMatch = sec.textContent.toLowerCase().includes(q);
+      sec.style.display = isMatch ? '' : 'none';
+      const link = document.querySelector(`.nav-link[href="#${sec.id}"]`);
+      if (link) link.parentElement.style.display = isMatch ? '' : 'none';
+      if (isMatch){ matches++; highlight(sec, q); }
+    });
+
+    info.textContent = matches
+      ? `${matches} secci${matches===1?'ón':'ones'} encontrada${matches===1?'':'s'} para "${input.value}"`
+      : `Sin resultados para "${input.value}"`;
+    noResults.style.display = matches ? 'none' : 'block';
+    content.style.display = matches ? '' : 'none';
+  }
+
+  let deb;
+  input.addEventListener('input', () => { clearTimeout(deb); deb = setTimeout(runSearch, 150); });
+  clearBtn.addEventListener('click', () => { input.value=''; runSearch(); input.focus(); });
+  input.addEventListener('keydown', e => { if (e.key === 'Escape'){ input.value=''; runSearch(); } });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== input){ e.preventDefault(); input.focus(); }
+  });
+</script>
+
+</body>
+</html>

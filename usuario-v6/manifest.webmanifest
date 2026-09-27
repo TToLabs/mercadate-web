@@ -1,0 +1,27 @@
+{
+  "name": "MercaDate",
+  "short_name": "MercaDate",
+  "description": "Encuentra productos y comercios cerca tuyo, con asistente de voz.",
+  "start_url": "/usuario-v6/",
+  "scope": "/usuario-v6/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "lang": "es",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/img/Logo_MercaDate/Logo_MercaDate1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/Logo_MercaDate/Logo_MercaDate1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

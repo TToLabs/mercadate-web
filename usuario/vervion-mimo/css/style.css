@@ -1,0 +1,36 @@
+/* --------- VARIABLES BASE (tema) --------- */
+:root{
+  --bg:#0B0D13;               /* fondo oscuro */
+  --surface:#11141F;          /* tarjetas */
+  --card:#171B27;             /* tarjetas */
+  --border:#232838;           /* bordes */
+  --text:#ECEEF5;             /* texto claro */
+  --text2:#C7CCDA;            /* texto secundario */
+  --muted:#8B91A7;           /* gris medio */
+  --accent:#F2B945;           /* dorado */
+  --accent-dim:rgba(242,185,69,0.1); /* acento acento */
+  --accent2:rgba(242,185,69,0.4); /* acento acento fuerte */
+  --accent3:rgba(242,185,69,0.6); /* acento acento fuerte */
+  --calipso:#18C7CE;          /* acento calipso */
+  --calipso2:#11a7ad;         /* acento calipso */
+  --green:#10b981;            /* verde */
+  --red:#ef4444;               /* rojo */
+  --orange:#ff8a00;           /* naranja */
+  --shadow:rgba(0,0,0,0.4);  /* sombra */
+}
+
+/* --------- MINIMAL HEADER --------- */
+.header-minimal {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 20px;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  gap:12px;
+}
+.vh-logo {font-size:1.5rem; font-weight:800; color:var(--accent);}
+.vh-logo-text {font-weight:700; background:linear-gradient(135deg,#f5c64d,#e65c00);-webkit-background-clip:text;color:transparent;}
+.vh-badge {display:flex;align-items:center;gap:4px; font-size:0.9rem; color:var(--text2); background:rgba(255,188,0,.15); padding:4px 10px;border-radius:8px;}
+.vh-profile-btn {background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;}
+.vh-fab{background:var(--surface);border:1px solid var(--border);border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s;}

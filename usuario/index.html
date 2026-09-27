@@ -1,0 +1,1246 @@
+<!doctype html>
+<!--
+  ═══════════════════════════════════════════════════
+  PLATAFORMA : Usuario — Portal del cliente
+  ARCHIVO    : index.html
+  ═══════════════════════════════════════════════════
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0B0D13"/>
+  <meta name="description" content="MercaDate — El mejor precio, a la vuelta de la esquina. Encuentra estaciones de servicio, almacenes, peluquerías y restaurantes cerca de ti."/>
+
+  
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
+
+  <title>MercaDate — El mejor precio, a la vuelta de la esquina</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="img/Logo_MercaDate/Logo_MercaDate1.png">
+  <link rel="apple-touch-icon" href="img/Logo_MercaDate/Logo_MercaDate1.png">
+
+  <!-- PWA / APK: instalable y offline -->
+  <link rel="manifest" href="usuario/manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Fuentes (autohospedadas) -->
+  <link rel="stylesheet" href="vendor/fonts/fonts.css?v=20260628-vendor"/>
+
+  <!-- Leaflet (mapa) — autohospedado -->
+  <link rel="stylesheet" href="vendor/css/leaflet.css?v=20260628-vendor"/>
+  <link rel="stylesheet" href="vendor/css/MarkerCluster.css?v=20260628-vendor"/>
+  <link rel="stylesheet" href="vendor/css/MarkerCluster.Default.css?v=20260628-vendor"/>
+
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="css/styles.css?v=20260728-consenso"/>
+
+  <!-- Google Sign-In (carga diferida) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- ═══════════ REDIRECT A SPLASH (primera carga de la sesión) ═══════════ -->
+  <script>
+    (function() {
+      try {
+        if (sessionStorage.getItem('mercadate_splash_seen_usuario') !== '1') {
+          // Marcar AHORA para evitar loop (por si el splash falla)
+          sessionStorage.setItem('mercadate_splash_seen_usuario', '1');
+          // Replace para no agregar entrada al historial
+          location.replace('splash.html');
+        }
+      } catch(e) {
+        // Si sessionStorage falla, seguir cargando la app normalmente
+      }
+    })();
+  </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       ANTI-PARPADEO — versión robusta (fix pantalla negra post-splash)
+       PROBLEMA ORIGINAL: body{visibility:hidden} ocultaba TAMBIÉN el overlay
+       de login, dejando pantalla negra cuando el usuario no tenía sesión.
+       SOLUCIÓN: body siempre visible; ocultamos solo #appRoot con opacity.
+       El overlay (z-index:999999) siempre visible sobre todo.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <style>
+    /* body SIEMPRE visible — overlay de login siempre accesible */
+    body { visibility: visible !important; }
+    /* Solo el contenido de la app se oculta hasta confirmar sesión */
+    #appRoot { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    html.sesion-ok #appRoot { opacity: 1; pointer-events: auto; }
+  </style>
+  <noscript><style>#appRoot{opacity:1!important;pointer-events:auto!important}</style></noscript>
+  <!-- Verificación de sesión: PRIMERO de todo -->
+  <script src="js/auth.js?v=20260623-libre3000" onerror="(function(){document.documentElement.classList.add('sesion-ok');var ov=document.getElementById('usuarioLoginOverlay');if(ov)ov.style.display='flex';})()"></script>
+  <!-- SAFETY NET: si auth.js no termina en 4s, forzar visibilidad -->
+  <script>
+    (function(){
+      var t = setTimeout(function(){
+        if (!document.documentElement.classList.contains('sesion-ok')) {
+          console.warn('[MercaDate] auth.js timeout — forzando visibilidad');
+          document.documentElement.classList.add('sesion-ok');
+          var ov = document.getElementById('usuarioLoginOverlay');
+          if (ov && ov.style.display === 'none') ov.style.display = 'flex';
+        }
+      }, 4000);
+      new MutationObserver(function(_, obs){
+        if (document.documentElement.classList.contains('sesion-ok')) {
+          clearTimeout(t); obs.disconnect();
+        }
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    })();
+  </script>
+
+  <!-- Aplicar tema guardado ANTES del render (evita flash de color) -->
+  <script>
+    (function(){
+      try {
+        const saved = localStorage.getItem('mercadate_theme');
+        const root = document.documentElement;
+        // Día = slate (variante clara del dark); Noche = #0B0D13 profundo.
+        const setDia   = () => { root.setAttribute('data-theme','dark'); root.classList.add('theme-dia'); };
+        const setNoche = () => { root.setAttribute('data-theme','dark'); root.classList.remove('theme-dia'); };
+        if (saved === 'dark') {
+          setNoche();
+        } else if (saved === 'light') {
+          setDia();
+        } else {
+          // Default (sin preferencia guardada) y 'auto' → siempre según horario
+          const h = new Date().getHours();
+          (h >= 7 && h < 19) ? setDia() : setNoche();
+        }
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.add('theme-dia');
+      }
+    })();
+  </script>
+
+  <!-- API wrapper seguro (con timeout, no-store, AbortController) -->
+  <script src="js/api.js?v=20260614-fix401"></script>
+
+  <!-- Utilidades globales: escapeHtml (anti-XSS) — compartido con admin y comercio -->
+  <script src="js/utils.js?v=20260619-security"></script>
+<script src="js/flags.js?v=20260721-flags3"></script>
+  <!-- Utilidades específicas usuario: SafeStorage, mostrarToast, formatoCLP, etc. -->
+  <script src="js/utils.js?v=20260619-security-cleaned"></script>
+</head>
+<body>
+
+<!-- ═══ OVERLAY DE LOGIN (mismo approach que admin — sin navegar) ═══ -->
+<div id="usuarioLoginOverlay" style="position:fixed;inset:0;z-index:999999;background:#0B0D13;background-image:radial-gradient(circle,#171B27 1px,transparent 1px);background-size:28px 28px;display:flex;align-items:center;justify-content:center;padding:20px;font-family:'Inter',sans-serif">
+  <div style="background:rgba(22,27,39,0.97);border:1px solid #232838;border-radius:20px;padding:36px 30px;max-width:420px;width:100%;backdrop-filter:blur(20px);box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+    <div style="text-align:center;margin-bottom:24px">
+      <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="MercaDate" style="height:60px;width:60px;object-fit:contain;display:block;margin:0 auto 8px;border-radius:14px" onerror="this.style.display='none'">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:32px;letter-spacing:-1px;background:linear-gradient(130deg,#f0b429,#f5c64d);-webkit-background-clip:text;-webkit-text-fill-color:transparent">MercaDate</div>
+      <div style="color:#64748b;font-size:13px;margin-top:4px">El mejor precio, a la vuelta de la esquina</div>
+    </div>
+    <!-- tabs -->
+    <div id="ulTabBar" style="display:flex;gap:4px;padding:4px;background:#0B0D13;border:1px solid #232838;border-radius:10px;margin-bottom:20px">
+      <button onclick="_ulTab('login')" data-tab="login" style="flex:1;padding:10px;background:#f0b429;border:none;color:#0B0D13;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:8px">Iniciar sesión</button>
+      <button onclick="_ulTab('register')" data-tab="register" style="flex:1;padding:10px;background:transparent;border:none;color:#94a3b8;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:8px">Crear cuenta</button>
+    </div>
+    <div id="ulError" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);color:#f43f5e"></div>
+    <div id="ulSuccess" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e"></div>
+    <div id="ulLimite" style="display:none"></div>
+    <!-- LOGIN -->
+    <div id="ulPanelLogin">
+      <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Usuario o email</label><input id="ul_user" type="text" autocomplete="username" placeholder="tu_usuario o tu@email.com" maxlength="120" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+      <div style="margin-bottom:6px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Contraseña</label><input id="ul_pass" type="password" autocomplete="current-password" placeholder="••••••••" maxlength="128" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+      <p style="text-align:right;margin:0 0 12px"><a onclick="_ulTab('recover')" style="font-size:13px;color:#f0b429;cursor:pointer">¿Olvidaste tu contraseña?</a></p>
+      <button onclick="_ulLogin()" style="width:100%;padding:13px;border:none;border-radius:11px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;background:linear-gradient(130deg,#f5c64d,#f0b429);color:#0B0D13;box-shadow:0 4px 14px rgba(240,180,41,0.3)">Iniciar sesión →</button>
+      <p style="text-align:center;color:#64748b;font-size:12px;margin-top:18px">¿No tienes cuenta? <a onclick="_ulTab('register')" style="color:#f0b429;cursor:pointer;font-weight:600">Regístrate</a></p>
+    </div>
+    <!-- REGISTRO -->
+    <div id="ulPanelRegister" style="display:none">
+      <div style="background:rgba(0,196,204,0.06);border:1px solid rgba(0,196,204,0.25);color:#94a3b8;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:16px">💡 <strong style="color:#00C4CC">Solo email y contraseña.</strong> Después completas tu perfil en Mi Cuenta.</div>
+      <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Email</label><input id="ul_reg_email" type="email" autocomplete="email" placeholder="tu@email.com" maxlength="120" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+      <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Contraseña (mín. 6)</label><input id="ul_reg_pass" type="password" autocomplete="new-password" placeholder="••••••••" maxlength="128" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+      <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Fecha de nacimiento</label><input id="ul_reg_fnac" type="date" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/><div style="font-size:12px;color:#64748b;margin-top:4px">Debes tener al menos 16 años</div></div>
+      <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">¿Te invitó alguien? <span style="font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label><input id="ul_reg_invitante" type="email" autocomplete="off" placeholder="Email de quien te invitó" maxlength="120" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#cbd5e1;margin:6px 0 8px;cursor:pointer"><input id="ul_reg_acepta" type="checkbox" style="margin-top:3px;width:16px;height:16px;flex:none"/><span>Acepto los <a href="legal/terminos.html" target="_blank" style="color:#f0b429">Términos y Condiciones</a> y tengo 16 años o más.</span></label>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#cbd5e1;margin:0 0 12px;cursor:pointer"><input id="ul_reg_acepta_privacidad" type="checkbox" style="margin-top:3px;width:16px;height:16px;flex:none"/><span>Autorizo el tratamiento de mis datos personales conforme a la <a href="legal/privacidad.html" target="_blank" style="color:#f0b429">Política de Privacidad</a> (Ley N° 21.719).</span></label>
+      <button onclick="_ulRegistrar()" style="width:100%;padding:13px;border:none;border-radius:11px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;background:linear-gradient(130deg,#f5c64d,#f0b429);color:#0B0D13;box-shadow:0 4px 14px rgba(240,180,41,0.3)">Crear cuenta →</button>
+      <p style="text-align:center;color:#64748b;font-size:12px;margin-top:18px">¿Ya tienes cuenta? <a onclick="_ulTab('login')" style="color:#f0b429;cursor:pointer;font-weight:600">Inicia sesión</a></p>
+    </div>
+    <!-- RECUPERAR -->
+    <div id="ulPanelRecover" style="display:none">
+      <h2 style="font-family:'Syne',sans-serif;font-size:18px;margin:0 0 4px;color:#e2e8f0;text-align:center">Recuperar contraseña 🔑</h2>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:22px;text-align:center">Te enviaremos un enlace por email</p>
+      <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Email</label><input id="ul_rec_email" type="email" placeholder="tu@email.com" maxlength="120" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+      <button onclick="_ulRecuperar()" style="width:100%;padding:13px;border:none;border-radius:11px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;background:linear-gradient(130deg,#f5c64d,#f0b429);color:#0B0D13">Enviar enlace →</button>
+      <p style="text-align:center;color:#64748b;font-size:12px;margin-top:18px"><a onclick="_ulTab('login')" style="color:#f0b429;cursor:pointer">← Volver</a></p>
+    </div>
+    <!-- RESET CONTRASEÑA (desde enlace de email ?token=) -->
+    <div id="ulPanelReset" style="display:none">
+      <h2 style="font-family:'Syne',sans-serif;font-size:18px;margin:0 0 4px;color:#e2e8f0;text-align:center">Nueva contraseña 🔐</h2>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:22px;text-align:center">Elige una contraseña nueva</p>
+      <div id="ulResetForm">
+        <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Nueva contraseña</label><input id="ul_reset_p1" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" maxlength="128" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+        <div style="margin-bottom:14px"><label style="display:block;font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Repite</label><input id="ul_reset_p2" type="password" autocomplete="new-password" placeholder="Repite la contraseña" maxlength="128" style="width:100%;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid #232838;color:#e2e8f0;font-family:inherit;font-size:14px;outline:none"/></div>
+        <button onclick="_ulResetear()" style="width:100%;padding:13px;border:none;border-radius:11px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;background:linear-gradient(130deg,#f5c64d,#f0b429);color:#0B0D13">Guardar contraseña</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Login overlay (en index.html — sin navegar entre páginas) ─────────────
+// Registro de eventos CRO — fire-and-forget, no bloquea el flujo
+function _ulEvento(evento, meta) {
+  try {
+    var uid = (window.usuarioActual && window.usuarioActual.id) ? String(window.usuarioActual.id) : 'anon';
+    fetch('/api/log-funnel', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body:JSON.stringify({evento:evento,usuario:uid,meta:meta||undefined}) }).catch(function(){});
+  } catch(_) {}
+}
+window._ulMostrar = function() { document.getElementById('usuarioLoginOverlay').style.display='flex'; document.documentElement.classList.remove('sesion-ok'); _ulEvento('overlay_mostrado'); };
+window._ulOcultar = function() { document.getElementById('usuarioLoginOverlay').style.display='none'; document.documentElement.classList.add('sesion-ok'); };
+// Ocultar al arrancar (auth.js lo muestra si no hay sesión)
+document.getElementById('usuarioLoginOverlay').style.display='none';
+
+function _ulErr(m){ const e=document.getElementById('ulError'); e.textContent=m; e.style.display='block'; document.getElementById('ulSuccess').style.display='none'; }
+function _ulOk(m){ const e=document.getElementById('ulSuccess'); e.textContent=m; e.style.display='block'; document.getElementById('ulError').style.display='none'; }
+function _ulLimpiar(){ document.getElementById('ulError').style.display='none'; document.getElementById('ulSuccess').style.display='none'; document.getElementById('ulLimite').style.display='none'; }
+
+function _ulTab(name) {
+  _ulLimpiar();
+  if (name === 'register') _ulEvento('tab_register');
+  if (name === 'recover')  _ulEvento('recover_intento');
+  var showTabs = name !== 'recover' && name !== 'reset';
+  document.getElementById('ulTabBar').style.display = showTabs ? 'flex' : 'none';
+  document.querySelectorAll('#ulTabBar button').forEach(b => {
+    var isActive = b.dataset.tab === name;
+    b.style.background = isActive ? '#f0b429' : 'transparent';
+    b.style.color = isActive ? '#0B0D13' : '#94a3b8';
+  });
+  ['login','register','recover','reset'].forEach(p => {
+    var el = document.getElementById('ulPanel'+p.charAt(0).toUpperCase()+p.slice(1));
+    if (el) el.style.display = p === name ? 'block' : 'none';
+  });
+}
+
+async function _ulLogin(cerrarSid) {
+  _ulLimpiar();
+  var user = document.getElementById('ul_user').value.trim();
+  var pass = document.getElementById('ul_pass').value;
+  if (!user || !pass) return _ulErr('Completa todos los campos');
+  _ulEvento('login_intento');
+  try {
+    var r = await fetch('/api/usuario/login', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', cache:'no-store', body: JSON.stringify({ username:user, password:pass, cerrar_sid: cerrarSid||undefined }) });
+    var data = await r.json();
+    if (data.success) {
+      localStorage.setItem('mercadate_user', JSON.stringify(data.usuario));
+      localStorage.setItem('md_login_ts', String(Date.now()));
+      var esApp = /MercaDateApp/i.test(navigator.userAgent) || window.MERCADATE_APP === true;
+      if (esApp && data.token) localStorage.setItem('md_user_token', data.token);
+      else localStorage.removeItem('md_user_token');
+      // Definir identidad y ocultar overlay — SIN navegar
+      try { Object.defineProperty(window,'usuarioActivo',{value:data.usuario.id,writable:false,configurable:true}); } catch(_){}
+      try { Object.defineProperty(window,'usuarioActual',{value:data.usuario,writable:false,configurable:true}); } catch(_){}
+      _ulEvento('login_ok');
+      window._ulOcultar();
+      // Arrancar la app
+      setTimeout(function(){ try{ document.dispatchEvent(new Event('sesion-lista')); }catch(_){} }, 100);
+    } else if (data.codigo === 'limite_dispositivos') {
+      var sesiones = data.sesiones || [];
+      var cont = document.getElementById('ulLimite');
+      cont.innerHTML = '<div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:16px;margin-top:14px"><div style="font-weight:700;margin-bottom:6px">🔒 Máximo de dispositivos</div><div style="font-size:13px;color:#94a3b8;margin-bottom:12px">Cierra una sesión para continuar:</div>' +
+        sesiones.map(function(s){ return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #334155;border-radius:8px;margin-bottom:8px"><div><div style="font-weight:600">'+s.dispositivo+'</div></div><button onclick="_ulLogin(\''+s.sid+'\')" style="padding:8px 12px;border-radius:8px;border:none;background:#f0b429;color:#0B0D13;font-weight:700;cursor:pointer">Cerrar y entrar</button></div>'; }).join('') + '</div>';
+      cont.style.display='block';
+    } else { _ulEvento('login_error', {motivo: data.codigo || 'credenciales'}); _ulErr(data.message || 'Credenciales incorrectas'); }
+  } catch(e) { _ulEvento('login_error', {motivo:'red'}); _ulErr('Error de conexión'); }
+}
+
+async function _ulRegistrar() {
+  _ulLimpiar();
+  var email = document.getElementById('ul_reg_email').value.trim();
+  var pass  = document.getElementById('ul_reg_pass').value;
+  var fnac  = document.getElementById('ul_reg_fnac').value;
+  var acepta= document.getElementById('ul_reg_acepta').checked;
+  var aceptaPriv= document.getElementById('ul_reg_acepta_privacidad').checked;
+  if (!email||!pass) return _ulErr('Completa email y contraseña');
+  if (pass.length<6) return _ulErr('Contraseña mínimo 6 caracteres');
+  if (!fnac) return _ulErr('Ingresa tu fecha de nacimiento');
+  var f=new Date(fnac), hoy=new Date(), edad=hoy.getFullYear()-f.getFullYear();
+  var m=hoy.getMonth()-f.getMonth(); if(m<0||(m===0&&hoy.getDate()<f.getDate())) edad--;
+  if (edad<16) return _ulErr('Debes tener al menos 16 años');
+  if (!acepta) return _ulErr('Debes aceptar los Términos y Condiciones');
+  if (!aceptaPriv) return _ulErr('Debes autorizar el tratamiento de tus datos (Política de Privacidad)');
+  var emailInvitante = (document.getElementById('ul_reg_invitante')?.value || '').trim();
+  _ulEvento('registro_intento');
+  try {
+    var r = await fetch('/api/usuario/registrar', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', cache:'no-store', body:JSON.stringify({email,password:pass,fecha_nacimiento:fnac,acepta_condiciones:true}) });
+    var data = await r.json();
+    if (data.success) {
+      localStorage.setItem('mercadate_user', JSON.stringify(data.usuario));
+      localStorage.setItem('md_login_ts', String(Date.now()));
+      try { Object.defineProperty(window,'usuarioActivo',{value:data.usuario.id,writable:false,configurable:true}); } catch(_){}
+      try { Object.defineProperty(window,'usuarioActual',{value:data.usuario,writable:false,configurable:true}); } catch(_){}
+      _ulEvento('registro_ok');
+      // Aplicar referido si el usuario ingresó email de invitante
+      if (emailInvitante && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInvitante)) {
+        fetch('/api/usuario/aplicar-invitacion', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body:JSON.stringify({user_id:data.usuario.id, email_invitante:emailInvitante}) }).catch(function(){});
+      }
+      _ulOk('¡Cuenta creada! Usuario: '+data.usuario.username);
+      setTimeout(function(){ window._ulOcultar(); setTimeout(function(){ try{ document.dispatchEvent(new Event('sesion-lista')); }catch(_){} },100); }, 1500);
+    } else { _ulEvento('registro_error', {motivo: data.message}); _ulErr(data.message || 'Error al crear cuenta'); }
+  } catch(e) { _ulEvento('registro_error', {motivo:'red'}); _ulErr('Error de conexión'); }
+}
+
+async function _ulRecuperar() {
+  _ulLimpiar();
+  var email = document.getElementById('ul_rec_email').value.trim();
+  if (!email) return _ulErr('Ingresa tu email');
+  try {
+    await fetch('/api/usuario/recuperar-password', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin', body:JSON.stringify({email}) });
+    _ulOk('Si el email está registrado, recibirás un enlace en breve.');
+    setTimeout(function(){ _ulTab('login'); }, 3000);
+  } catch(e) { _ulErr('Error de conexión'); }
+}
+
+async function _ulIniciarReset(token) {
+  window._ulResetToken = token;
+  window._ulMostrar ? window._ulMostrar() : document.getElementById('usuarioLoginOverlay').style.display='flex';
+  _ulTab('reset');
+  try {
+    var r = await fetch('/api/reset-password/validar?token='+encodeURIComponent(token));
+    var d = await r.json();
+    if (!d.valido) { document.getElementById('ulResetForm').style.display='none'; _ulErr('Este enlace expiró o ya fue usado. Solicita uno nuevo.'); }
+  } catch(_) {}
+}
+
+async function _ulResetear() {
+  _ulLimpiar();
+  var p1 = document.getElementById('ul_reset_p1').value;
+  var p2 = document.getElementById('ul_reset_p2').value;
+  if (p1.length < 6) return _ulErr('Mínimo 6 caracteres');
+  if (p1 !== p2) return _ulErr('Las contraseñas no coinciden');
+  try {
+    var r = await fetch('/api/reset-password', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:window._ulResetToken, password:p1}) });
+    var d = await r.json();
+    if (d.success) { _ulOk('✅ Contraseña actualizada. Ya puedes iniciar sesión.'); setTimeout(function(){ _ulTab('login'); }, 2000); }
+    else _ulErr(d.message || 'Error al actualizar');
+  } catch(e) { _ulErr('Error de conexión'); }
+}
+
+// Detectar ?token= para reset de contraseña
+(function() {
+  var token = new URLSearchParams(location.search).get('token');
+  if (token) { document.addEventListener('DOMContentLoaded', function(){ _ulIniciarReset(token); }); }
+})();
+
+// Enter en campos
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('ul_pass')?.addEventListener('keydown', function(e){ if(e.key==='Enter') _ulLogin(); });
+  document.getElementById('ul_reg_pass')?.addEventListener('keydown', function(e){ if(e.key==='Enter') _ulRegistrar(); });
+  var fn = document.getElementById('ul_reg_fnac');
+  if (fn) {
+    var hoy=new Date();
+    fn.max = new Date(hoy.getFullYear()-16,hoy.getMonth(),hoy.getDate()).toISOString().slice(0,10);
+    fn.min = new Date(hoy.getFullYear()-110,hoy.getMonth(),hoy.getDate()).toISOString().slice(0,10);
+  }
+});
+</script>
+
+<header>
+  <div class="header-left">
+    <div class="logo-block">
+      <div class="logo-row">
+        <div class="logo">
+          <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="Logo MercaDate">
+          <div class="logo-text">Merca<span>date</span></div>
+        </div>
+        <button class="mc-btn" id="btnMiCuenta" onclick="window.MiCuenta.abrir()" title="Mi Cuenta">
+          <span class="mc-label" id="mcNombreHeader">Mi Cuenta</span>
+        </button>
+      </div>
+      <div class="tagline">El mejor precio, a la vuelta de la esquina</div>
+    </div>
+  </div>
+  <button class="registrar-btn" id="btnRegistrarVisita" onclick="abrirEscanerQR()" title="Registrar visita escaneando el QR del local">
+    📷 <span class="rv-label">Registrar visita</span>
+  </button>
+  <div class="header-right">
+    <button class="cart-btn" id="btnCarrito" onclick="Carrito.abrir()" title="Mi carrito">
+      🛒 <span class="rv-label">Carrito</span>
+      <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+    </button>
+    <button class="notif-bell" id="notifBell" onclick="MiCuenta.abrirNotificaciones()" title="Avisos">
+      🔔 <span class="rv-label">Avisos</span>
+      <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+    </button>
+    <div class="puntos-badge" id="puntosBadge" title="Tu nivel y progreso" onclick="if(window.abrirNivelPopup)abrirNivelPopup()" style="cursor:pointer">
+      🏆 <span id="puntosCount">0</span> pts
+    </div>
+    <button class="gps-btn" id="gpsBtn" title="GPS apagado (clic para activar)" onclick="toggleGPS()">
+      <div class="gps-dot" id="gpsDot"></div>
+      <span id="gpsLabel">GPS</span>
+    </button>
+  </div>
+</header>
+
+<!-- Slot reservado para banner publicitario (entre header y categorías). Vacío/oculto hasta tener el aviso. -->
+<div id="mdAdBanner" class="md-ad-banner" hidden aria-label="Publicidad"></div>
+
+<nav class="category-nav">
+  <button class="cat-tab" data-cat="combustible">⛽ Combustibles</button>
+  <button class="cat-tab proximamente" data-cat="almacen" disabled>🛒 Almacenes<span class="cat-soon">Próximamente</span></button>
+  <button class="cat-tab proximamente" data-cat="servicio" disabled>🛠️ Servicios<span class="cat-soon">Próximamente</span></button>
+  <button class="cat-tab proximamente" data-cat="restaurante" disabled>🍽️ Gastronomía<span class="cat-soon">Próximamente</span></button>
+  <button class="cat-tab proximamente" data-cat="mascota" disabled>🐾 Mascotas<span class="cat-soon">Próximamente</span></button>
+</nav>
+<style>
+  /* Categorías en "Próximamente" — bloqueadas hasta activarse desde Admin */
+  .cat-tab.proximamente {
+    opacity:.6; cursor:not-allowed;
+    display:inline-flex; flex-direction:column; align-items:center; gap:1px; line-height:1.05;
+  }
+  .cat-tab.proximamente .cat-soon {
+    font-size:8.5px; font-weight:800; letter-spacing:.4px;
+    color:#f0b429; text-transform:uppercase;
+  }
+  .cat-tab.proximamente:hover { background:transparent; border-color:var(--border); color:var(--muted); }
+</style>
+
+<section class="search-section">
+  <div class="search-row" id="fuelRow" style="display:none">
+    <div class="fuel-chips-container" id="fuelChips">
+      <div class="fuel-chip" data-val="93">⛽ 93</div>
+      <div class="fuel-chip" data-val="95">⛽ 95</div>
+      <div class="fuel-chip" data-val="97">⛽ 97</div>
+      <div class="fuel-chip" data-val="DI">🚛 Diésel</div>
+      <div class="fuel-chip" data-val="KE">🛢️ Parafina</div>
+    </div>
+    <button class="btn-more" id="btnToggleAdvanced">⚙️ Filtros</button>
+    <div class="distance-control inline-radio">
+      <span>📏</span>
+      <input type="range" id="radiusSlider1" min="500" max="10000" step="500" value="1000">
+      <span id="radiusVal1">1.0 km</span>
+    </div>
+  </div>
+
+  <div class="search-row" id="commerceRow" style="display:none">
+    <input type="text" class="filter-input" id="productoInput"
+           placeholder="🔍 Buscar producto..."
+           style="flex:1; min-width:0;">
+    <button class="btn-search" id="btnBuscar">🔍 Buscar</button>
+    <button class="btn-more" id="btnToggleCommerceAdvanced">⚙️ Filtros</button>
+    <div class="distance-control inline-radio">
+      <span>📏</span>
+      <input type="range" id="radiusSlider" min="500" max="10000" step="500" value="1000">
+      <span id="radiusVal">1.0 km</span>
+    </div>
+  </div>
+
+  <div class="advanced-panel" id="commerceAdvancedPanel">
+    <!-- Subcategoría (texto corto) + Dirección en la MISMA línea -->
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap;">
+      <div class="adv-section-label" style="white-space:nowrap; margin-bottom:0;">Subcategoría</div>
+      <select class="filter-select" id="prodCatSelect" style="flex:0 0 auto; min-width:100px; font-size:13px;">
+        <option value="">Todas</option>
+      </select>
+      <div class="address-group" style="flex:1; min-width:0; margin:0;">
+        <input type="text" class="filter-input" id="commerceAddressInput"
+               placeholder="📍 Dirección (ej: Av. Providencia 1200)" style="width:100%;">
+      </div>
+    </div>
+    <button class="btn-search" id="btnBuscarCommerce" style="flex-shrink:0;">🔍 Buscar</button>
+    <button id="btnLimpiarCommerce"
+            style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;
+                   padding:4px 6px;font-family:'DM Sans',sans-serif;text-decoration:underline;
+                   text-underline-offset:3px;align-self:center;"
+            title="Limpiar filtros de comercio">↺ Restablecer</button>
+  </div>
+
+  <div class="advanced-panel" id="advancedPanel">
+    <div class="address-group">
+      <input type="text" class="filter-input" id="addressInput" placeholder="Dirección (ej: Av. Providencia 1200)">
+    </div>
+    <select class="filter-select" id="marcaSelect"><option value="">Todas las marcas</option></select>
+    <select class="filter-select" id="regionSelect"><option value="">Todas las regiones</option></select>
+    <select class="filter-select" id="comunaSelect"><option value="">Todas las comunas</option></select>
+    <button class="btn-search" id="btnBuscarFuel" style="flex-shrink:0;">🔍 Buscar</button>
+    <button id="btnLimpiar" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:4px 6px;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:3px;align-self:center;" title="Restablecer todos los filtros">↺ Restablecer</button>
+  </div>
+</section>
+
+<main class="content-area">
+  <section class="map-container">
+    <div id="map"></div>
+    <!-- Slider de radio FLOTANTE centrado arriba del mapa -->
+    <div class="map-radio-floating">
+      <span>📏</span>
+      <span class="label">Radio</span>
+      <input type="range" id="radiusSliderMap" min="500" max="10000" step="500" value="1000">
+      <span class="km" id="radiusValMap">1.0 km</span>
+    </div>
+  </section>
+  <button type="button" class="map-toggle" id="mapToggle" aria-label="Mostrar u ocultar el mapa">
+    <span class="map-toggle-grip"></span>
+    <span class="map-toggle-label">▲ Ocultar mapa</span>
+  </button>
+  <aside class="results-panel">
+    <div class="results-header">
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+        <strong id="resultsTitle" style="display:none">Estaciones en el área</strong>
+        <span id="resultCount" class="count-badge" style="display:none">0</span>
+      </div>
+      <span class="applied-radius-badge" id="appliedRadiusBadge">📏 1.0 km</span>
+      <select id="sortBy">
+        <option value="precio">Precio</option>
+        <option value="distancia">Cercanía</option>
+      </select>
+    </div>
+    <div class="status-bar" id="statusBar" style="display:none"></div>
+    <div class="results-list" id="resultsList">
+      <div class="empty-state">
+        <div class="es-title"><span class="es-icon">⛽</span> Bienvenido a MercaDate</div>
+        <div class="es-steps">
+          <div class="es-step"><div class="es-num">1</div><span>Selecciona una categoría en la barra superior</span></div>
+          <div class="es-step"><div class="es-num">2</div><span>Elige el tipo de combustible o producto</span></div>
+          <div class="es-step"><div class="es-num">3</div><span>Ajusta el radio de búsqueda y presiona <strong style="color:#f0b429">Buscar</strong></span></div>
+        </div>
+        <div class="es-note">📍 Activa el GPS para ver resultados ordenados por cercanía</div>
+      </div>
+    </div>
+
+    <div class="paseadores-panel" id="paseadoresPanel">
+      <div class="psp-header">
+        <button class="psp-back" id="pspBack">← Volver</button>
+        <div class="psp-title-row">
+          <div class="psp-title" id="pspTitle">🐕 Paseadores de Mascotas</div>
+          <button class="psp-registrar-btn" id="btnRegistrarPaseador">+ Inscribirme</button>
+        </div>
+      </div>
+      <div class="psp-filter-bar">
+        <input type="text" id="pspSearch" placeholder="🔍 Buscar por nombre o comuna...">
+      </div>
+      <div class="psp-list" id="pspList"></div>
+    </div>
+  </aside>
+
+  <!-- Popup flotante del comercio (fuera del aside, sobre el mapa) -->
+  <div class="cdp-backdrop" id="cdpBackdrop"></div>
+  <div class="commerce-detail-panel" id="commerceDetailPanel">
+    <div class="cdp-header">
+      <div style="flex:1;min-width:0">
+        <div class="cdp-title" id="cdpTitle">Comercio</div>
+        <div class="cdp-sub" id="cdpSub"></div>
+        <span class="cdp-badge" id="cdpBadge">0 productos</span>
+      </div>
+      <div class="cdp-header-actions">
+        <button class="cdp-fav-btn" id="cdpFavBtn" data-flag="usuario_favoritos" onclick="toggleFavorito()" title="Guardar en favoritos">🤍</button>
+        <a class="cdp-wa-btn" id="cdpWaBtn" data-flag="comercio_whatsapp" target="_blank" rel="noopener" style="display:none">💬 WhatsApp</a>
+        <a class="cdp-wa-btn cdp-ig-btn" id="cdpIgBtn" data-flag="comercio_instagram" target="_blank" rel="noopener" style="display:none">📷 Instagram</a>
+        <button class="cdp-wa-btn" id="cdpShareBtn" data-flag="usuario_compartir" onclick="compartirComercio()" title="Compartir" style="display:none;border:none;cursor:pointer">📤 Compartir</button>
+        <button class="cdp-close" id="cdpBack" title="Cerrar">✕</button>
+      </div>
+    </div>
+    <div class="cdp-info-strip" id="cdpInfoStrip" style="display:none"></div>
+    <div class="cdp-search-bar">
+      <input type="text" id="cdpSearch" placeholder="🔍 Filtrar productos en este comercio...">
+    </div>
+    <div class="cdp-subcats" id="cdpSubcats"></div>
+    <div class="cdp-products" id="cdpProducts"></div>
+  </div>
+</main>
+
+<div class="registro-modal" id="registroModal">
+  <div class="registro-box">
+    <div class="rbox-header">
+      <div>
+        <div class="rbox-title" id="modalTitulo">🐕 Inscripción como Paseador</div>
+        <div class="rbox-sub">Tu certificado de antecedentes y foto serán revisados antes de aparecer en el directorio. Proceso: 24–48 hrs.</div>
+      </div>
+      <button class="rbox-close" id="btnCerrarModal">✕</button>
+    </div>
+
+    <div class="rbox-form" id="registroForm">
+
+      <div class="form-section-title">Datos personales</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nombre completo <span>*</span></label>
+          <input type="text" id="rNombre" placeholder="Ej: María González">
+        </div>
+        <div class="form-field">
+          <label>RUT <span>*</span></label>
+          <input type="text" id="rRut" placeholder="12.345.678-9">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Fecha de nacimiento <span>*</span></label>
+        <input type="date" id="rFechaNac" max="">
+      </div>
+
+      <div class="form-section-title">Contacto</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Teléfono <span>*</span></label>
+          <input type="tel" id="rTelefono" placeholder="+56 9 1234 5678">
+        </div>
+        <div class="form-field">
+          <label>Correo electrónico <span>*</span></label>
+          <input type="email" id="rEmail" placeholder="tu@correo.cl">
+        </div>
+      </div>
+
+      <div class="form-section-title">Ubicación</div>
+      <div class="form-field">
+        <label>Dirección <span>*</span></label>
+        <input type="text" id="rDireccion" placeholder="Ej: Av. Providencia 1200">
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Comuna <span>*</span></label>
+          <input type="text" id="rComuna" placeholder="Ej: Providencia">
+        </div>
+        <div class="form-field">
+          <label>Región <span>*</span></label>
+          <select id="rRegion">
+            <option value="">Selecciona...</option>
+            <option>Arica y Parinacota</option><option>Tarapacá</option>
+            <option>Antofagasta</option><option>Atacama</option>
+            <option>Coquimbo</option><option>Valparaíso</option>
+            <option>Metropolitana</option><option>O'Higgins</option>
+            <option>Maule</option><option>Ñuble</option>
+            <option>Biobío</option><option>La Araucanía</option>
+            <option>Los Ríos</option><option>Los Lagos</option>
+            <option>Aysén</option><option>Magallanes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section-title">Documentos requeridos</div>
+
+      <div class="form-field">
+        <label>Certificado de antecedentes <span>*</span></label>
+        <div class="upload-area" id="uploadCert" onclick="document.getElementById('fileCert').click()">
+          <div class="ua-icon">📄</div>
+          <div class="ua-text">Clic o arrastra tu certificado aquí</div>
+          <div class="ua-sub">PDF, JPG o PNG · Máx. 5 MB · Vigente (últimos 90 días)</div>
+        </div>
+        <input type="file" id="fileCert" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+        <div class="hint" id="certFileName">Sin archivo seleccionado</div>
+      </div>
+
+      <div class="form-field">
+        <label>Foto en primera persona <span>*</span></label>
+        <div class="upload-area selfie-area" id="uploadSelfie" onclick="document.getElementById('fileSelfie').click()">
+          <div class="ua-icon">🤳</div>
+          <div class="ua-text">Foto tuya mirando a la cámara</div>
+          <div class="ua-sub">Debe verse tu rostro claramente · JPG o PNG · Máx. 3 MB</div>
+        </div>
+        <input type="file" id="fileSelfie" accept=".jpg,.jpeg,.png" style="display:none">
+        <div class="hint" id="selfieFileName">Sin archivo seleccionado</div>
+        <div id="selfiePreview" style="display:none; margin-top:8px;">
+          <img id="selfieImg" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--calipso);" alt="Vista previa">
+        </div>
+      </div>
+
+      <input type="hidden" id="rTipoServicio" value="paseador">
+
+    </div>
+
+    <div class="rbox-footer">
+      <div class="rbox-note">Al enviar aceptas que MercaDate revise tus datos, certificado y foto. Tu perfil aparecerá una vez aprobado.</div>
+      <button class="btn-submit-registro" id="btnEnviarRegistro">Enviar inscripción →</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Bibliotecas autohospedadas (sin CDN externo) -->
+<script src="vendor/js/leaflet.js?v=20260628-vendor"></script>
+<script src="vendor/js/leaflet.markercluster.js?v=20260628-vendor"></script>
+<script src="vendor/js/html5-qrcode.min.js?v=20260628-vendor"></script>
+<script src="vendor/js/tesseract.min.js?v=20260628-vendor"></script>
+<script src="vendor/js/jspdf.umd.min.js?v=20260628-vendor"></script>
+
+<!-- Lógica principal -->
+<script src="js/onboarding.js?v=20260629-onb5"></script>
+<script src="js/voz-mercadate.js?v=20260702-fix-callback"></script>
+<script src="js/voz-calibracion.js?v=20260621-cl"></script>
+<script src="js/lila-demo.js?v=20260622-interactivo"></script>
+<script src="js/app.js?v=20260927-osm"></script>
+
+<!-- Service Worker: offline + voz cacheada (web y APK) -->
+<script>
+  if ('serviceWorker' in navigator && !window.MERCADATE_APP && !/MercaDateApp/i.test(navigator.userAgent)) {
+    window.addEventListener('load', function () {
+      // En APK no registrar SW — siempre carga desde servidor local, el SW solo causa problemas de caché
+      navigator.serviceWorker.register('/usuario/sw.js', { scope: '/usuario/' })
+        .catch(function (e) { console.warn('[SW] no se pudo registrar:', e && e.message); });
+    });
+  } else if ('serviceWorker' in navigator) {
+    // En APK: desregistrar cualquier SW viejo que pudiera estar instalado
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(r) { r.unregister(); });
+    });
+  }
+</script>
+
+
+<!-- ══════════════════ MI CUENTA — MODAL ══════════════════ -->
+<div class="mc-overlay" id="miCuentaModal">
+  <div class="mc-modal" onclick="event.stopPropagation()">
+    <div class="mc-header">
+      <h2>👤 Mi Cuenta</h2>
+      <button class="mc-close" onclick="MiCuenta.cerrar()">✕</button>
+    </div>
+    <div class="mc-tabs">
+      <button class="mc-tab active" data-tab="perfil"  onclick="MiCuenta.tab('perfil')">📋 Perfil</button>
+      <button class="mc-tab" data-tab="compras"        data-flag="usuario_mis_compras"    onclick="MiCuenta.tab('compras')">🧾 Mis Compras</button>
+      <button class="mc-tab" data-tab="seguridad"      onclick="MiCuenta.tab('seguridad')">🔒 Seguridad</button>
+      <button class="mc-tab" data-tab="reseñas"        data-flag="usuario_resenas"        onclick="MiCuenta.tab('reseñas')">⭐ Reseñas</button>
+      <button class="mc-tab" data-tab="favoritos"      data-flag="usuario_favoritos"      onclick="MiCuenta.tab('favoritos')">❤️ Favoritos</button>
+      <button class="mc-tab" data-tab="alertas"        data-flag="usuario_alertas_precio" onclick="MiCuenta.tab('alertas')">🔔 Alertas</button>
+      <button class="mc-tab" data-tab="notificaciones" data-flag="usuario_avisos"         onclick="MiCuenta.tab('notificaciones')">📬 Avisos <span id="mcNotifBadge" style="display:none;background:#ef4444;color:#fff;border-radius:100px;font-size:10px;padding:1px 6px;margin-left:3px">0</span></button>
+      <button class="mc-tab" data-tab="ayuda"          onclick="MiCuenta.tab('ayuda')">❓ Ayuda</button>
+      <button class="mc-tab" data-tab="acerca"         onclick="MiCuenta.tab('acerca')">ℹ️ Acerca de MercaDate</button>
+      <button class="mc-tab" data-tab="config"         onclick="MiCuenta.tab('config')">⚙️ Configuración</button>
+    </div>
+    <div class="mc-body">
+
+      <!-- PERFIL -->
+      <div class="mc-panel active" data-panel="perfil">
+        <div class="mc-row-2">
+          <div class="mc-field"><label>Nombre completo</label><input id="mc_nombre" placeholder="Tu nombre"/></div>
+          <div class="mc-field"><label>Teléfono</label><input id="mc_telefono" placeholder="+56..."/></div>
+        </div>
+        <div class="mc-row-2">
+          <div class="mc-field"><label>Email</label><input id="mc_email" type="email" placeholder="tu@email.com"/></div>
+          <div class="mc-field"><label>Comuna</label><select id="mc_comuna"><option value="">Selecciona…</option></select></div>
+        </div>
+
+        <!-- Invitación por email -->
+        <div class="mc-invite-box">
+          <div class="mc-invite-title">🎁 Invita amigos · Gana 40 pts</div>
+          <div class="mc-invite-desc">Comparte tu email con quien quieras invitar. Cuando registren su primera boleta, ¡ambos ganan!</div>
+          <div class="mc-invite-email-row">
+            <span class="mc-invite-email" id="mcInviteEmail">—</span>
+            <button class="mc-invite-copy" onclick="MiCuenta.copiarEmailInvitacion()" title="Copiar email">📋 Copiar</button>
+          </div>
+        </div>
+
+        <!-- Nivel de usuario -->
+        <div id="mcNivelBarra" style="margin:14px 0 4px;background:var(--card2,#1a2233);border-radius:12px;padding:14px 16px;display:none">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span id="mcNivelEmoji" style="font-size:20px">🟢</span>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px;color:var(--text)" id="mcNivelNombre">Explorador Novato</div>
+              <div style="font-size:11px;color:var(--muted)" id="mcNivelPuntos">0 puntos</div>
+            </div>
+            <button onclick="window.abrirNivelPopup&&abrirNivelPopup()" style="background:none;border:1px solid var(--border2,#2a3450);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer">Ver habilidades</button>
+          </div>
+          <div style="background:var(--bg2,#0f1320);border-radius:6px;height:8px;overflow:hidden">
+            <div id="mcNivelBarFill" style="height:100%;border-radius:6px;transition:width .5s ease;width:0%"></div>
+          </div>
+          <div id="mcNivelBarLabel" style="font-size:11px;color:var(--muted);margin-top:5px;text-align:right"></div>
+        </div>
+
+        <!-- Estadísticas de ahorro (Nivel 3+) -->
+        <div id="mcStatsBox" style="display:none">
+          <div style="font-weight:700;font-size:13px;margin-bottom:10px;color:var(--accent)">📊 Mis Estadísticas</div>
+          <div class="mc-stats-grid" id="mcStatsGrid"></div>
+        </div>
+
+        <div class="mc-actions">
+          <button class="mc-btn-action mc-btn-primary" onclick="MiCuenta.guardarPerfil()">Guardar cambios</button>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN -->
+      <div class="mc-panel" data-panel="config">
+
+        <!-- Apariencia -->
+        <div class="mc-personaje-box">
+          <div class="mc-personaje-title">🎨 Apariencia</div>
+          <div class="mc-apariencia-row" style="margin-top:6px">
+            <span class="mc-apariencia-lbl">Tema</span>
+            <div class="theme-toggle compact">
+              <button type="button" class="theme-opt" data-theme="light" onclick="MiCuenta.aplicarTema('light')" title="Claro"><span class="t-ico">☀️</span><span class="t-lbl">Día</span></button>
+              <button type="button" class="theme-opt" data-theme="dark" onclick="MiCuenta.aplicarTema('dark')" title="Oscuro"><span class="t-ico">🌙</span><span class="t-lbl">Noche</span></button>
+              <button type="button" class="theme-opt" data-theme="auto" onclick="MiCuenta.aplicarTema('auto')" title="Horario"><span class="t-ico">🌓</span><span class="t-lbl">Horario</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preferencia de mapa -->
+        <div class="mc-personaje-box">
+          <div class="mc-personaje-title">🗺️ Aplicación de navegación</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Al tocar "Cómo llegar" o "Ir" en una estación, ¿qué app querés que abra?</div>
+          <div id="mapaPrefSeg" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        </div>
+
+        <!-- Asistente de voz (Lila) -->
+        <div class="mc-personaje-box" id="mcLilaBox">
+          <div class="mc-personaje-title">🎙️ Asistente de voz · Lila</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px">
+            <span style="font-size:12.5px;color:var(--muted)">Que Lila te salude y escuche tus comandos</span>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;flex:none">
+              <input type="checkbox" id="lilaActivar" onchange="MiCuenta.lilaToggle(this.checked)" style="opacity:0;width:0;height:0">
+              <span id="lilaSwitch" style="position:absolute;inset:0;background:#2a3450;border-radius:24px;transition:.2s;cursor:pointer"></span>
+            </label>
+          </div>
+          <div id="lilaControles">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button onclick="window.VozCorr&&window.VozCorr.calibrar()" style="flex:1;min-width:130px;background:var(--card2,#1a2233);border:1px solid var(--border2,#2a3450);color:var(--text);border-radius:9px;padding:9px;font-size:12.5px;cursor:pointer;font-weight:600">🎤 Probá tu voz</button>
+              <button onclick="window.LilaDemo&&window.LilaDemo.iniciar({conLogin:true})" style="flex:1;min-width:130px;background:var(--card2,#1a2233);border:1px solid var(--border2,#2a3450);color:var(--text);border-radius:9px;padding:9px;font-size:12.5px;cursor:pointer;font-weight:600">▶ Ver presentación</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Avatar / foto -->
+        <div class="mc-personaje-box">
+          <div class="mc-personaje-title">🧑 Tu avatar o foto</div>
+          <div class="mc-personaje-preview">
+            <div class="mc-personaje-bigring" id="mcPersPreviewRing">
+              <div class="mc-personaje-bigbody" id="mcPersPreview"><span id="mcPersEmoji">🧑</span></div>
+            </div>
+            <div class="mc-personaje-info">
+              <div id="mcPersNivelNombre" style="font-size:13px;font-weight:700">Tu personaje</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:3px">Aparece en tu perfil y en el mapa. Elige uno o usa tu foto.</div>
+            </div>
+          </div>
+          <div class="mc-personaje-opciones">
+            <div id="mcAvatarGrid"></div>
+          </div>
+        </div>
+
+        <!-- Cerrar sesión -->
+        <div style="height:1px;background:var(--border);margin:20px 0"></div>
+        <button class="mc-opcion" onclick="MiCuenta.cerrarSesion()" style="border:1px solid #ef4444;border-radius:12px">
+          <span class="mc-opcion-icon">🚪</span>
+          <div style="flex:1">
+            <div class="mc-opcion-titulo" style="color:#ef4444">Cerrar sesión</div>
+            <div class="mc-opcion-sub">Salir de tu cuenta en este dispositivo</div>
+          </div>
+        </button>
+      </div>
+
+      <!-- MIS COMPRAS -->
+      <div class="mc-panel" data-panel="compras">
+        <div id="comprasLista" class="compras-lista">
+          <div class="compras-loading">Cargando tus compras…</div>
+        </div>
+      </div>
+
+      <!-- SEGURIDAD -->
+      <div class="mc-panel" data-panel="seguridad">
+        <h4 style="font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">Cambiar nombre de usuario</h4>
+        <div class="mc-field"><label>Nuevo usuario</label><input id="mc_nuevo_user"/></div>
+        <div class="mc-field"><label>Contraseña actual</label><input id="mc_pass_actual_u" type="password"/></div>
+        <div class="mc-actions" style="margin-top:6px;margin-bottom:18px">
+          <button class="mc-btn-action mc-btn-ghost" onclick="MiCuenta.cambiarUsername()">Cambiar usuario</button>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin:18px 0"></div>
+
+        <h4 style="font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">Cambiar contraseña</h4>
+        <div class="mc-field"><label>Contraseña actual</label><input id="mc_pass_actual" type="password"/></div>
+        <div class="mc-field"><label>Nueva contraseña</label><input id="mc_pass_nueva" type="password"/></div>
+        <div class="mc-field"><label>Confirmar nueva</label><input id="mc_pass_conf" type="password"/></div>
+        <div class="mc-actions">
+          <button class="mc-btn-action mc-btn-primary" onclick="MiCuenta.cambiarPassword()">Actualizar contraseña</button>
+        </div>
+      </div>
+
+      <!-- RESEÑAS -->
+      <div class="mc-panel" data-panel="reseñas">
+        <div id="mcReseñaFormulario">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:8px">¿Tienes algo que contarnos? Tu opinión nos ayuda a mejorar.</p>
+          <div class="mc-field"><label>Título (opcional)</label><input id="mc_review_titulo" placeholder="Ej: Excelente para encontrar bencina"/></div>
+          <div class="mc-field"><label>Tu reseña *</label><textarea id="mc_review_comentario" rows="4" placeholder="Cuéntanos tu experiencia..."></textarea></div>
+          <div class="mc-actions">
+            <button class="mc-btn-action mc-btn-primary" onclick="MiCuenta.publicarResena()">📤 Publicar reseña</button>
+          </div>
+        </div>
+
+        <div style="height:1px;background:var(--border);margin:24px 0"></div>
+
+        <h4 style="font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">Mis reseñas</h4>
+        <div id="mcMisResenas"><p style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Cargando...</p></div>
+      </div>
+
+      <!-- ALERTAS DE PRECIO -->
+      <div class="mc-panel" data-panel="alertas">
+        <div id="mcAlertasLista"><p style="color:var(--muted);text-align:center;padding:24px">Cargando…</p></div>
+      </div>
+
+      <!-- FAVORITOS -->
+      <div class="mc-panel" data-panel="favoritos">
+        <div id="mcFavLista"><p style="color:var(--muted);text-align:center;padding:24px">Cargando…</p></div>
+      </div>
+
+      <!-- NOTIFICACIONES -->
+      <div class="mc-panel" data-panel="notificaciones">
+        <div id="mcNotifLista"><p style="color:var(--muted);text-align:center;padding:20px">Cargando…</p></div>
+      </div>
+
+      <!-- AYUDA -->
+      <div class="mc-panel" data-panel="ayuda">
+        <div id="mcAyudaOpciones">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:14px">¿En qué podemos ayudarte?</p>
+          <button class="mc-opcion" onclick="MiCuenta.abrirFormAyuda('comentario_usuario')">
+            <span class="mc-opcion-icon">💬</span>
+            <div style="flex:1">
+              <div class="mc-opcion-titulo">Enviar comentarios</div>
+              <div class="mc-opcion-sub">Sugerencias, ideas, comentarios generales</div>
+            </div>
+            <span style="color:var(--muted)">→</span>
+          </button>
+          <button class="mc-opcion" onclick="abrirPopupLegal('legal/terminos.html','Términos y Condiciones')">
+            <span class="mc-opcion-icon">📄</span>
+            <div style="flex:1">
+              <div class="mc-opcion-titulo">Términos y Condiciones</div>
+              <div class="mc-opcion-sub">Condiciones de uso de MercaDate</div>
+            </div>
+            <span style="color:var(--muted)">→</span>
+          </button>
+          <button class="mc-opcion" onclick="abrirPopupLegal('legal/privacidad.html','Política de Privacidad')">
+            <span class="mc-opcion-icon">🔒</span>
+            <div style="flex:1">
+              <div class="mc-opcion-titulo">Política de Privacidad</div>
+              <div class="mc-opcion-sub">Tus datos y derechos ARCO · Ley 21.719</div>
+            </div>
+            <span style="color:var(--muted)">→</span>
+          </button>
+          <button class="mc-opcion" onclick="MiCuenta.eliminarCuenta()" style="border:1px solid #ef4444;border-radius:12px;margin-bottom:4px">
+            <span class="mc-opcion-icon">🗑️</span>
+            <div style="flex:1">
+              <div class="mc-opcion-titulo" style="color:#ef4444">Eliminar mi cuenta</div>
+              <div class="mc-opcion-sub">Solicitar eliminación permanente de tus datos</div>
+            </div>
+          </button>
+          <button class="mc-opcion" onclick="MiCuenta.abrirFormAyuda('soporte_usuario')">
+            <span class="mc-opcion-icon">🛠️</span>
+            <div style="flex:1">
+              <div class="mc-opcion-titulo">Soporte Técnico</div>
+              <div class="mc-opcion-sub">Problemas, errores, ayuda urgente</div>
+            </div>
+            <span style="color:var(--muted)">→</span>
+          </button>
+
+          <!-- Mis conversaciones -->
+          <div id="mcMisMensajes" style="margin-top:18px">
+            <h4 style="font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Mis conversaciones</h4>
+            <div id="mcConversaciones"><div style="font-size:13px;color:var(--text2)">Cargando…</div></div>
+          </div>
+        </div>
+
+        <!-- Vista de hilo de conversación -->
+        <div id="mcHilo" style="display:none">
+          <button class="mc-btn-action mc-btn-ghost" onclick="MiCuenta.volverAyuda()" style="margin-bottom:14px">← Volver</button>
+          <h4 id="mcHiloAsunto" style="font-size:14px;color:var(--text);margin-bottom:12px">—</h4>
+          <div id="mcHiloBody" class="mc-hilo-body"></div>
+          <div class="mc-field" style="margin-top:12px"><textarea id="mc_hilo_respuesta" rows="3" placeholder="Escribe tu respuesta…"></textarea></div>
+          <div class="mc-actions">
+            <button class="mc-btn-action mc-btn-primary" onclick="MiCuenta.responderHilo()">📤 Responder</button>
+          </div>
+        </div>
+
+        <div id="mcAyudaFormulario" style="display:none">
+          <button class="mc-btn-action mc-btn-ghost" onclick="MiCuenta.volverAyuda()" style="margin-bottom:14px">← Volver</button>
+          <h4 id="mcAyudaTitulo" style="font-size:14px;color:var(--text);margin-bottom:12px">—</h4>
+          <div class="mc-field"><label>Asunto</label><input id="mc_ayuda_asunto"/></div>
+          <div class="mc-field"><label>Mensaje *</label><textarea id="mc_ayuda_mensaje" rows="5" placeholder="Describe con detalle..."></textarea></div>
+          <div class="mc-actions">
+            <button class="mc-btn-action mc-btn-primary" onclick="MiCuenta.enviarAyuda()">Enviar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mc-panel" data-panel="acerca">
+        <div style="text-align:center;padding:4px 0 14px">
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:22px;letter-spacing:-.02em;background:linear-gradient(120deg,#ff7a18,#f0b429);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">MercaDate</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">El mejor precio, a la vuelta de la esquina</div>
+        </div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.6">MercaDate te ayuda a descubrir los comercios de tu barrio y comparar precios reales: productos, servicios, gastronomía y combustibles cerca de ti.</p>
+        <div style="background:rgba(240,180,41,.08);border:1px solid var(--border);border-radius:12px;padding:14px;margin:14px 0">
+          <div style="font-weight:700;font-size:13px;margin-bottom:5px">⭐ Registra tus visitas y gana puntos</div>
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.5">Cada visita con boleta suma <b style="color:#f0b429">+10 puntos</b>. Sube de nivel y desbloquea alertas y reportes de precio.</div>
+        </div>
+        <button class="mc-opcion" onclick="window.location.href='usuario/manual-usuario.html'">
+          <span class="mc-opcion-icon">📚</span>
+          <div style="flex:1">
+            <div class="mc-opcion-titulo">Manual de usuario</div>
+            <div class="mc-opcion-sub">Guía paso a paso con todas las funciones</div>
+          </div>
+          <span style="color:var(--muted)">→</span>
+        </button>
+        <button class="mc-opcion" onclick="abrirPopupLegal('legal/acerca-usuario.html','Acerca de MercaDate')">
+          <span class="mc-opcion-icon">📖</span>
+          <div style="flex:1">
+            <div class="mc-opcion-titulo">Ver guía completa</div>
+            <div class="mc-opcion-sub">Todo lo que puedes hacer en MercaDate</div>
+          </div>
+          <span style="color:var(--muted)">→</span>
+        </button>
+        <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:18px;line-height:1.7">
+          MercaDate · Hecho en Chile 🇨🇱<br>contacto@mercadate.cl · www.mercadate.cl<br>Versión T&C: v2.3
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="mc-toast" id="mcToast"></div>
+
+
+
+<!-- ═══════ MODAL ESCÁNER QR — Registrar visita (Fase 3) ═══════ -->
+<div class="qr-scan-overlay" id="qrScanOverlay" style="display:none">
+  <div class="qr-scan-modal">
+    <button class="qr-scan-close" onclick="cerrarEscanerQR()">✕</button>
+
+    <!-- Paso 1: escaneo -->
+    <div id="qrStep1" class="qr-step">
+      <h3 class="qr-scan-title">📷 Escanea el código del local</h3>
+      <p class="qr-scan-sub">Apunta la cámara al código QR que está en el comercio</p>
+      <div id="qrReader" class="qr-reader"></div>
+      <p class="qr-scan-hint" id="qrScanHint">Esperando permiso de cámara…</p>
+    </div>
+
+    <!-- Paso 2: validando -->
+    <div id="qrStep2" class="qr-step" style="display:none">
+      <div class="qr-spinner"></div>
+      <h3 class="qr-scan-title" id="qrValidTitle">Validando ubicación…</h3>
+      <p class="qr-scan-sub" id="qrValidSub">Comprobando que estás en el local</p>
+    </div>
+
+    <!-- Paso 3: resultado -->
+    <div id="qrStep3" class="qr-step" style="display:none">
+      <div class="qr-result-icon" id="qrResultIcon">✅</div>
+      <h3 class="qr-scan-title" id="qrResultTitle">¡Estás en el local!</h3>
+      <p class="qr-scan-sub" id="qrResultSub"></p>
+      <div class="qr-local-info" id="qrLocalInfo"></div>
+      <div class="qr-result-actions" id="qrResultActions"></div>
+    </div>
+
+    <!-- Paso 4: captura de boleta + OCR -->
+    <div id="qrStep4" class="qr-step" style="display:none">
+      <h3 class="qr-scan-title">🧾 Escanea tu boleta</h3>
+      <p class="qr-scan-sub">Toma una foto clara o sube una imagen. La imagen <strong>no se guarda</strong>, solo leemos los datos.</p>
+
+      <!-- Elegir método -->
+      <div id="boletaMetodos" class="qr-boleta-opciones">
+        <button type="button" class="qr-foto-btn" onclick="abrirCamaraBoleta()">
+          📷 Tomar foto
+        </button>
+        <label class="qr-foto-btn alt" for="boletaFileInput">
+          📁 Buscar archivo
+          <input type="file" id="boletaFileInput" accept="image/*" style="display:none" onchange="procesarBoleta(this)">
+        </label>
+      </div>
+
+      <!-- Cámara en vivo -->
+      <div id="boletaCamView" style="display:none">
+        <div class="boleta-video-wrap">
+          <video id="boletaVideo" playsinline muted class="boleta-video"></video>
+          <div class="boleta-video-frame"></div>
+        </div>
+        <p class="qr-scan-hint">Encuadra la boleta dentro del recuadro y captura</p>
+        <div class="boleta-cam-actions">
+          <button type="button" class="qr-btn-primary" onclick="capturarFotoBoleta()">📸 Capturar</button>
+          <button type="button" class="qr-btn-ghost" onclick="cerrarCamaraBoleta()">Cancelar</button>
+        </div>
+      </div>
+
+      <canvas id="boletaCanvas" style="display:none"></canvas>
+
+      <div id="ocrProgress" style="display:none">
+        <div class="qr-spinner"></div>
+        <p class="qr-scan-hint" id="ocrProgressText">Leyendo boleta… 0%</p>
+      </div>
+      <button class="qr-btn-ghost" style="margin-top:14px" onclick="mostrarFormularioBoleta(null)">✍️ Prefiero ingresar los datos manualmente</button>
+    </div>
+
+    <!-- Paso 5: formulario editable (datos extraídos o manuales) -->
+    <div id="qrStep5" class="qr-step" style="display:none">
+      <h3 class="qr-scan-title">📋 Confirma los datos</h3>
+      <p class="qr-scan-sub" id="ocrAviso">Revisa y corrige si algo quedó mal leído.</p>
+      <div class="qr-form">
+        <label class="qr-field">
+          <span>RUT del comercio</span>
+          <input type="text" id="bf_rut" placeholder="76.123.456-7" autocomplete="off">
+        </label>
+        <label class="qr-field">
+          <span>N° de boleta</span>
+          <input type="text" id="bf_boleta" placeholder="000123" autocomplete="off">
+        </label>
+        <label class="qr-field">
+          <span>Monto total ($)</span>
+          <input type="number" id="bf_monto" placeholder="5990" inputmode="numeric" autocomplete="off">
+        </label>
+        <label class="qr-field">
+          <span>Fecha de compra</span>
+          <input type="date" id="bf_fecha" autocomplete="off">
+        </label>
+      </div>
+      <div id="bf_validacion" class="qr-valid-msg" style="display:none"></div>
+      <div class="qr-result-actions">
+        <button class="qr-btn-primary" onclick="enviarBoleta()">✅ Registrar compra</button>
+        <button class="qr-btn-ghost" onclick="cerrarEscanerQR()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup calificación de app -->
+<div id="ratingPopup" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+<div style="background:#11141F;border:1px solid rgba(255,255,255,.10);border-radius:18px;width:320px;max-width:calc(100vw - 40px);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)">
+  <div style="background:linear-gradient(135deg,#6366f1,#a855f7);padding:20px 24px 16px;text-align:center">
+    <div style="font-size:28px;margin-bottom:4px">⭐</div>
+    <div id="ratingPopupTitulo" style="font-weight:800;font-size:16px;color:#fff">¿Cómo va tu experiencia?</div>
+    <div id="ratingPopupSub" style="font-size:12px;color:rgba(255,255,255,0.85);margin-top:4px">Tu opinión ayuda a mejorar MercaDate</div>
+  </div>
+  <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+    <div id="ratingStars" style="display:flex;justify-content:center;gap:8px;font-size:32px">
+      <span class="rating-star" data-v="1" style="cursor:pointer;opacity:0.4">⭐</span>
+      <span class="rating-star" data-v="2" style="cursor:pointer;opacity:0.4">⭐</span>
+      <span class="rating-star" data-v="3" style="cursor:pointer;opacity:0.4">⭐</span>
+      <span class="rating-star" data-v="4" style="cursor:pointer;opacity:0.4">⭐</span>
+      <span class="rating-star" data-v="5" style="cursor:pointer;opacity:0.4">⭐</span>
+    </div>
+    <textarea id="ratingComentario" placeholder="Contanos qué te gustó o qué mejorarías…" style="width:100%;min-height:80px;background:#1e2a3a;border:1px solid #334155;border-radius:10px;color:#e2e8f0;padding:10px;font-size:13px;font-family:inherit;resize:none;box-sizing:border-box"></textarea>
+    <button id="ratingEnviarBtn" onclick="window._enviarRating()" style="padding:12px;background:linear-gradient(90deg,#6366f1,#a855f7);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer">Enviar calificación</button>
+    <button onclick="window._cerrarRating(true)" style="background:none;border:none;color:#64748b;font-size:13px;cursor:pointer">Ahora no</button>
+  </div>
+</div>
+</div>
+
+<!-- Módulo Mi Cuenta -->
+<script src="js/micuenta.js?v=20260701-tema-auto"></script>
+<script src="js/carrito.js?v=20260721-flags2"></script>
+<script src="vendor/js/qrcode.min.js?v=20260628-vendor"></script>
+<script src="js/delivery.js?v=20260721-dlv1"></script>
+<script>
+// Pop-up para páginas legales/guía (en vez de abrir pestaña nueva)
+window.abrirPopupLegal = function (url, titulo) {
+  var ov = document.getElementById('mdLegalPopup');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'mdLegalPopup';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(8,12,20,.72);display:flex;align-items:center;justify-content:center;padding:14px';
+    ov.innerHTML =
+      '<div style="background:#0b0f16;width:100%;max-width:680px;height:88vh;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid #243044">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #243044;flex:none">' +
+          '<span id="mdLegalPopupTit" style="font-weight:700;font-size:14px;color:#eaf0f8"></span>' +
+          '<button onclick="cerrarPopupLegal()" aria-label="Cerrar" style="background:#1b2433;border:1px solid #243044;color:#eaf0f8;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;line-height:1">✕</button>' +
+        '</div>' +
+        '<iframe id="mdLegalPopupFrame" title="Contenido" style="flex:1;width:100%;border:none;background:#0b0f16"></iframe>' +
+      '</div>';
+    ov.addEventListener('click', function (e) { if (e.target === ov) cerrarPopupLegal(); });
+    document.body.appendChild(ov);
+  }
+  document.getElementById('mdLegalPopupTit').textContent = titulo || '';
+  document.getElementById('mdLegalPopupFrame').src = url;
+  ov.style.display = 'flex';
+};
+window.cerrarPopupLegal = function () {
+  var ov = document.getElementById('mdLegalPopup');
+  if (ov) { ov.style.display = 'none'; var f = document.getElementById('mdLegalPopupFrame'); if (f) f.src = 'about:blank'; }
+};
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarPopupLegal(); });
+</script>
+<!-- Popup nivel/progreso — FUERA del header (overflow:hidden lo cortaba) -->
+<div class="nivel-popup" id="avisosPopup" style="display:none">
+  <div class="nivel-popup-backdrop" onclick="cerrarAvisosPopup()"></div>
+  <div class="nivel-popup-card">
+    <button class="nivel-popup-close" onclick="cerrarAvisosPopup()">✕</button>
+    <div class="np-header">
+      <div class="np-nivel-badge">🔔</div>
+      <div>
+        <div class="np-nivel-nombre">Avisos</div>
+      </div>
+    </div>
+    <div id="avisosLista" style="margin-top:12px;max-height:340px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<div class="nivel-popup" id="nivelPopup" style="display:none">
+  <div class="nivel-popup-backdrop" onclick="cerrarNivelPopup()"></div>
+  <div class="nivel-popup-card">
+    <button class="nivel-popup-close" onclick="cerrarNivelPopup()">✕</button>
+    <div class="np-header">
+      <div class="np-nivel-badge" id="npNivelBadge">🟢</div>
+      <div>
+        <div class="np-nivel-nombre" id="npNivelNombre">Novato</div>
+        <div class="np-puntos" id="npPuntos">0 puntos</div>
+      </div>
+    </div>
+    <div class="np-progress-wrap">
+      <div class="np-progress-bar"><div class="np-progress-fill" id="npProgressFill"></div></div>
+      <div class="np-progress-text" id="npProgressText">—</div>
+    </div>
+    <div class="np-daily" id="npDaily"></div>
+    <div class="np-abilities" id="npAbilities"></div>
+    <div class="np-how">✨ Ganas puntos al registrar visitas, reportar precios y aportar datos.</div>
+  </div>
+</div>
+
+<!-- Lila: botón flotante (FAB) estilo Android, solo móvil -->
+<button type="button" class="lila-fab" id="lilaFab"
+        aria-label="Lila, tu asistente de voz">🎙️</button>
+
+<script>
+// ── Móvil: colapsar/expandir el mapa para dar más espacio a las tarjetas ──
+(function () {
+  var toggle = document.getElementById('mapToggle');
+  if (!toggle) return;
+  var label = toggle.querySelector('.map-toggle-label');
+  toggle.addEventListener('click', function () {
+    var collapsed = document.body.classList.toggle('map-collapsed');
+    if (label) label.textContent = collapsed ? '▼ Mostrar mapa' : '▲ Ocultar mapa';
+    if (!collapsed) {
+      // Al revelar el mapa, Leaflet necesita recalcular su tamaño
+      setTimeout(function () {
+        try { window.map && window.map.invalidateSize(); } catch (e) {}
+      }, 220);
+    }
+  });
+})();
+</script>
+
+<!-- APK/Móvil: menú flotante compacto con estilo tarjeta -->
+<script src="usuario-skin.js?v=20260629-rail-fix2"></script>
+
+<!-- Consentimiento de datos (Ley 21.719): aparece UNA sola vez, recién
+     después de entrar a la app (evento sesion-lista, tras login/registro
+     o sesión restaurada) — no en el splash, antes de que exista sesión. -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;
+  background:rgba(7,9,15,.96);border-top:1px solid rgba(245,160,40,.25);
+  padding:14px 20px;align-items:center;gap:14px;flex-wrap:wrap;
+  font-family:'DM Sans',system-ui,sans-serif;font-size:12.5px;color:rgba(255,255,255,.7);
+  backdrop-filter:blur(10px);">
+  <span style="flex:1;min-width:220px;line-height:1.5">
+    🍪 MercaDate usa almacenamiento local (cookies de sesión y preferencias) para funcionar.
+    No compartimos tus datos con terceros con fines publicitarios.
+    <a href="legal/privacidad.html" target="_blank"
+       style="color:#f0b429;text-decoration:underline;text-underline-offset:3px">Ver Política de Privacidad</a>
+  </span>
+  <button onclick="(function(){localStorage.setItem('md_cookie_ok','1');document.getElementById('cookieBanner').style.display='none';})()"
+    style="flex-shrink:0;background:#f0b429;border:none;color:#1a1a1a;border-radius:9px;
+           padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">
+    Entendido
+  </button>
+</div>
+<script>
+  (function(){
+    function mostrarSiCorresponde(){
+      if(localStorage.getItem('md_cookie_ok')==='1') return;
+      var b=document.getElementById('cookieBanner');
+      if(b) b.style.display='flex';
+    }
+    document.addEventListener('sesion-lista', mostrarSiCorresponde);
+  })();
+</script>
+
+</body>
+</html>

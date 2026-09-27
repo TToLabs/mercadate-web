@@ -1,0 +1,132 @@
+/* PLATAFORMA : Usuario V6 — capa de CONEXIÓN (mínima)
+   El diseño vive en css/v6.css, copiado LITERAL de la maqueta web/preview-v6/.
+   Esta hoja NO rediseña nada: solo hace tres cosas que la maqueta no puede saber:
+     1. Oculta los elementos legacy que deben seguir vivos en el DOM.
+     2. Mete la .search-section real dentro del overlay de la maqueta.
+     3. Le da el look de la maqueta (.rc) al markup que genera app.js en runtime.
+   Orden de carga: styles.css → v6.css (maqueta) → esta hoja. */
+
+/* ── 1. Legacy vivo pero invisible ──────────────────────────────────────────
+   Estos nodos NO se pueden borrar: app.js/carrito.js leen #puntosCount,
+   #gpsDot, #gpsLabel, #cartBadge y #notifBadge SIN proxy (app.js:37 mata la
+   app entera si falta #puntosCount), y el rail dispara los 5 botones proxy
+   con .click() sintético. */
+header.header-legacy-hidden{ display: none !important; }
+#mdRail, #apkRail{ display: none !important; }   /* la maqueta trae su propio rail */
+.map-toggle{ position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+
+/* ── 2. La .search-section REAL vive dentro del overlay de la maqueta ──────── */
+.search-section.md-search-overlay{ display: none; }
+.search-section.md-search-overlay.open{ display: flex; }
+/* Las filas reales usan estilos de styles.css pensados para barra horizontal;
+   acá se apilan dentro del panel del overlay. */
+.md-search-panel .search-row{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.md-search-panel .advanced-panel.open{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.md-search-panel .fuel-chips-container{ display: flex; flex-wrap: wrap; gap: 6px; }
+.md-search-panel .distance-control{ display: flex; align-items: center; gap: 8px; width: 100%; }
+.md-search-panel .distance-control input[type=range]{ flex: 1; min-width: 0; }
+
+/* ── Barra de tipo de combustible flotante sobre el mapa ────────────────────
+   Espejo visual de los .fuel-chip reales (overlay de búsqueda): clic acá
+   dispara .click() en el chip real (mismo patrón que el resto del archivo,
+   no duplica lógica). Base: web/preview-v6/css/v6-conexion.css. */
+.md-fuel-bar{
+  position:absolute; top:64px; left:50%; transform:translateX(-50%); z-index:850;
+  display:flex; gap:4px; padding:5px; border-radius:100px;
+  background:rgba(24,199,206,.14); border:1px solid rgba(24,199,206,.35);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+}
+.md-fuel-bar[hidden]{ display:none; }
+.fuel-type-btn{
+  padding:7px 14px; border-radius:100px; font-size:12px; font-weight:700;
+  color:var(--calipso); background:transparent; border:none; cursor:pointer;
+}
+.fuel-type-btn.active{ background:var(--accent); color:#1a1200; }
+
+/* Chips de combustible reales (.fuel-chip[data-val]) con el look de .chip */
+.fuel-chip{
+  padding: 7px 12px; border-radius: 100px; font-size: 12px; cursor: pointer;
+  background: var(--card); border: 1px solid var(--card-brd); color: var(--txt-2);
+}
+.fuel-chip.selected, .fuel-chip.active{
+  background: rgba(24,199,206,.16); border-color: rgba(24,199,206,.45); color: var(--calipso);
+}
+.filter-input, .filter-select{
+  height: 42px; border-radius: 12px; padding: 0 14px; font-size: 14px;
+  background: var(--card); border: 1px solid var(--card-brd); color: var(--txt);
+}
+.btn-search, .btn-more{
+  height: 38px; padding: 0 14px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+  background: rgba(24,199,206,.14); border: 1px solid rgba(24,199,206,.4); color: var(--calipso);
+}
+
+/* ── 3. Markup generado por app.js con el look de la maqueta ────────────────
+   app.js pinta .commerce-card dentro de #resultsList (y vistaGeneral()
+   sobrescribe el innerHTML completo, así que esto tiene que ser por CSS). */
+.commerce-card{
+  display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 8px;
+  background: var(--card); border: 1px solid var(--card-brd);
+  border-left: 3px solid var(--accent); border-radius: 12px;
+  cursor: pointer; transition: .15s; animation: none !important;
+}
+.commerce-card:hover{ background: rgba(255,255,255,.06); }
+.commerce-card.selected{
+  border-color: var(--calipso); border-left-color: var(--calipso);
+  background: rgba(24,199,206,.10);
+}
+.cc-icon{ width:36px; height:36px; border-radius:9px; display:grid; place-items:center; font-size:16px; flex:none; background:rgba(255,255,255,.06); }
+.cc-body{ flex:1; min-width:0; }
+.cc-name{ font-size:14px; font-weight:700; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cc-sub{ font-size:11px; color:var(--txt-3); margin-top:2px; }
+.cc-right{ text-align:right; flex:none; }
+.cc-dist{ font-size:12px; color:var(--txt-2); }
+.cc-count{ font-size:10px; color:var(--txt-3); margin-top:2px; }
+.card-price-main{ color: var(--calipso); font-weight: 800; }
+
+/* Estado vacío / gate de GPS que pinta vistaGeneral() */
+.empty-state{ background:transparent; border:none; box-shadow:none; padding:24px 8px; text-align:center; }
+.es-title{ font-size:15px; font-weight:800; color:var(--txt); }
+.es-steps{ margin:12px 0; display:flex; flex-direction:column; gap:8px; }
+.es-step{ display:flex; align-items:center; gap:8px; color:var(--txt-2); font-size:12px; text-align:left; }
+.es-num{ width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.08); display:grid; place-items:center; font-size:11px; font-weight:700; flex:none; }
+.es-note{ color:var(--txt-3); font-size:12px; }
+
+/* Controles reales de la barra de la lista (viven en .md-sheet-tools) */
+#resultsTitle{ font-size:14px; font-weight:800; color:var(--txt); }
+.count-badge{ background:rgba(255,255,255,.08); border-radius:100px; padding:2px 8px; font-size:11px; font-weight:700; color:var(--txt-2); }
+.applied-radius-badge{
+  flex:none; font-size:11px; font-weight:700; padding:5px 10px; border-radius:100px;
+  background:rgba(24,199,206,.12); color:var(--calipso); border:1px solid rgba(24,199,206,.3);
+}
+.status-bar{ flex:none; padding:6px 14px; font-size:12px; color:var(--txt-3); }
+.paseadores-panel{ display:none; }
+.md-bottom-sheet.expanded #paseadoresPanel.open{ display:flex; flex-direction:column; flex:1; overflow-y:auto; }
+
+/* Detalle de comercio: la maqueta lo estiliza por #id, pero la estructura
+   interna real tiene otras clases. Solo lo que falta. */
+.cdp-header{ display:flex; gap:12px; align-items:flex-start; }
+.cdp-title{ font-size:18px; font-weight:800; color:var(--txt); }
+.cdp-badge{ display:inline-block; margin-top:4px; font-size:11px; color:var(--calipso); background:rgba(24,199,206,.12); border-radius:100px; padding:2px 8px; }
+.cdp-header-actions{ display:flex; gap:6px; flex:none; margin-left:auto; }
+.cdp-fav-btn, .cdp-wa-btn, .cdp-close{
+  height:34px; padding:0 10px; border-radius:10px; cursor:pointer; font-size:12px;
+  background:rgba(255,255,255,.05); border:1px solid var(--card-brd); color:var(--txt-2);
+}
+.cdp-info-strip{ margin-top:10px; font-size:12px; color:var(--txt-2); background:rgba(255,255,255,.04); border-radius:10px; padding:8px 10px; }
+.cdp-search-bar{ margin-top:12px; }
+.cdp-search-bar input{ width:100%; height:38px; border-radius:10px; padding:0 12px; font-size:13px; background:var(--card); border:1px solid var(--card-brd); color:var(--txt); }
+.cdp-subcats{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.cdp-products{ margin-top:10px; }
+#commerceDetailPanel{ max-height:80vh; overflow-y:auto; }
+
+/* El FAB de Lila REAL vive dentro de la nav: hay que anular su position:fixed
+   propio (styles.css) para que sea un hijo normal del flex. */
+.md-bn-fab.lila-fab{
+  position: static !important; inset: auto !important;
+  right: auto !important; bottom: auto !important; z-index: auto !important;
+}
+
+/* Categorías "Próximamente" reales dentro del nav de la maqueta */
+.cat-tab.proximamente{ opacity:.55; cursor:not-allowed; flex-direction:column; gap:1px; padding:6px 10px; }
+.cat-tab.proximamente .cat-soon{ font-size:8px; font-weight:800; letter-spacing:.4px; color:var(--accent); text-transform:uppercase; }
+.cat-tab.proximamente:hover{ background:transparent; }

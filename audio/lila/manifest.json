@@ -1,0 +1,18 @@
+{
+  "Enseguida, te muestro Doña Carmen": {
+    "adulto": "Enseguida, te muestro Doña Carmen",
+    "file": "/audio/lila/dyn_10ec98bd.mp3"
+  },
+  "Enseguida, te muestro DOÑA CARMEN": {
+    "adulto": "Enseguida, te muestro DOÑA CARMEN",
+    "file": "/audio/lila/dyn_bfefcb82.mp3"
+  },
+  "buscando chorrillana": {
+    "adulto": "buscando chorrillana",
+    "file": "/audio/lila/dyn_b263f74b.mp3"
+  },
+  "No encontré chorrillana cerca. Probá con \"amplía la búsqueda\" o buscá otra cosa.": {
+    "adulto": "No encontré chorrillana cerca. Probá con \"amplía la búsqueda\" o buscá otra cosa.",
+    "file": "/audio/lila/dyn_07a26049.mp3"
+  }
+}
