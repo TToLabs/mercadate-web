@@ -340,8 +340,10 @@
     // Bottom nav
     var navMapa = $('#v6NavMapa'); if (navMapa) navMapa.addEventListener('click', function () { window.v6SwitchView('mapa'); });
     var navLista = $('#v6NavLista'); if (navLista) navLista.addEventListener('click', function () { window.v6SwitchView('lista'); });
-    var navFav = $('#v6NavFavoritos'); if (navFav) navFav.addEventListener('click', function () { window.MiCuenta && (window.MiCuenta.tab('favoritos'), window.MiCuenta.abrir()); });
-    var navPerfil = $('#v6NavPerfil'); if (navPerfil) navPerfil.addEventListener('click', function () { window.MiCuenta && (window.MiCuenta.tab('perfil'), window.MiCuenta.abrir()); });
+    // abrir() fuerza tab('perfil') por dentro (micuenta.js:90) → hay que
+    // pedir el tab DESPUÉS de abrir, si no Favoritos siempre termina en Perfil.
+    var navFav = $('#v6NavFavoritos'); if (navFav) navFav.addEventListener('click', function () { window.MiCuenta && (window.MiCuenta.abrir(), window.MiCuenta.tab('favoritos')); });
+    var navPerfil = $('#v6NavPerfil'); if (navPerfil) navPerfil.addEventListener('click', function () { window.MiCuenta && window.MiCuenta.abrir(); });
 
     marcarNavActivo('mapa');
     window.addEventListener('resize', function () { try { window.map && window.map.invalidateSize(); } catch (e) {} });
