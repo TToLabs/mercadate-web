@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<!-- PLATAFORMA : Comercio V6 — splash formal (estilo MiniMkt "Digitaliza tu minimarket").
+     Mismo comportamiento que /comercio/splash.html: pasa a index.html a los 6,5 s o al tocar. -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MercaDate — Portal Comercio</title>
+<link rel="icon" type="image/png" href="img/Logo_MercaDate/Logo_MercaDate1.png">
+<link rel="stylesheet" href="vendor/fonts/fonts.css?v=20260628-vendor"/>
+<script>
+  // Mismo tema que el panel (Día por defecto). localStorage envuelto: puede tirar SecurityError.
+  (function(){ try { if (localStorage.getItem('cv6_tema') === 'noche') document.documentElement.classList.add('noche'); } catch(e){} })();
+</script>
+<style>
+  :root{--bg:#F7F8FA;--card:#FFFFFF;--brd:#EDEEF2;--txt:#14161C;--txt2:#5C6270;--txt3:#9297A3;
+        --hero1:#2B2D33;--hero2:#44474F;--ok:#1F9254;--okbg:#E8F5EE;--btn:#14161C;--btntx:#FFFFFF}
+  html.noche{--bg:#28313F;--card:#2F3A4A;--brd:#3C4859;--txt:#EEF1F6;--txt2:#AEB7C6;--txt3:#7E8899;
+        --hero1:#1E2531;--hero2:#38445A;--ok:#18C7CE;--okbg:rgba(24,199,206,.14);--btn:#18C7CE;--btntx:#0B0D13}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100dvh;background:var(--bg);color:var(--txt);
+       font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;
+       display:flex;justify-content:center;padding:calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 20px)}
+  .w{width:100%;max-width:440px;display:flex;flex-direction:column;gap:22px}
+  .brand{font-weight:800;font-size:20px;letter-spacing:-.3px;text-align:center}
+  .hero{border-radius:22px;padding:34px 24px;text-align:center;color:#FFFFFF;
+        background:linear-gradient(135deg,var(--hero1),var(--hero2))}
+  .ico{width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;margin:0 auto 20px}
+  .hero h1{margin:0 0 10px;font-size:26px;font-weight:800;letter-spacing:-.5px;line-height:1.15}
+  .hero p{margin:0;font-size:15px;line-height:1.5;color:rgba(255,255,255,.85)}
+  .card{background:var(--card);border:1px solid var(--brd);border-radius:18px;padding:20px 22px}
+  .card h2{margin:0 0 4px;font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .card .s{font-size:13px;color:var(--txt2);margin-bottom:14px}
+  .li{display:flex;align-items:center;gap:12px;padding:8px 0;font-size:15px}
+  .ck{flex:none;width:22px;height:22px;border-radius:50%;background:var(--ok);display:grid;place-items:center}
+  .tag{display:inline-block;font-size:13px;font-weight:700;color:var(--ok);background:var(--okbg);border-radius:8px;padding:6px 12px;margin-bottom:6px}
+  .cta{display:block;text-align:center;text-decoration:none;background:var(--btn);color:var(--btntx);
+       font-weight:700;font-size:16px;border-radius:14px;padding:16px;min-height:44px}
+  .note{text-align:center;font-size:12px;color:var(--txt3)}
+  .prog{height:3px;border-radius:2px;background:var(--brd);overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:var(--txt);animation:p 6.5s linear forwards}
+  html.noche .prog i{background:var(--ok)}
+  @keyframes p{to{width:100%}}
+  @media (prefers-reduced-motion:reduce){.prog i{animation:none;width:100%}}
+</style>
+</head>
+<body>
+<div class="w">
+  <div class="brand">Mercadate</div>
+
+  <section class="hero">
+    <div class="ico">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9M4 9v11h16V9M9 20v-6h6v6"/></svg>
+    </div>
+    <h1>Tu negocio en la vitrina del barrio</h1>
+    <p>Sube tu inventario, controla tus precios y aparece en el celular de cada cliente que busca cerca de ti.</p>
+  </section>
+
+  <section class="card">
+    <span class="tag">Plan gratuito, sin tarjeta</span>
+    <h2>Todo desde tu celular</h2>
+    <div class="s">Empieza hoy y sube de plan cuando lo necesites.</div>
+    <div class="li"><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Inventario y precios al día</div>
+    <div class="li"><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Apareces en el mapa de tu zona</div>
+    <div class="li"><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Pedidos y clientes por WhatsApp</div>
+    <div class="li"><span class="ck"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Métricas de visitas y clics</div>
+  </section>
+
+  <a href="index.html" class="cta">Empezar gratis</a>
+  <div class="prog"><i></i></div>
+  <div class="note">Toca la pantalla para continuar</div>
+</div>
+<script>
+  var redirected = false;
+  var go = function(){ if(redirected) return; redirected = true; location.replace("index.html"); };
+  setTimeout(go, 6500);
+  document.addEventListener('click', function(e){ if(e.target.closest('.cta')) return; go(); });
+</script>
+</body>
+</html>

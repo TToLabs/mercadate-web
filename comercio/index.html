@@ -1,0 +1,1508 @@
+<!doctype html>
+<!--
+  ═══════════════════════════════════════════════════
+  PLATAFORMA : Comercio V6 — Portal del comerciante (piel formal; JS compartido con /comercio/)
+  ARCHIVO    : index.html
+  ═══════════════════════════════════════════════════
+-->
+<html lang="es">
+<head>
+  <script>window.MD_APP_VERSION = 1;</script>
+  <script src="beta-shim.js?v=1"></script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MercaDate — Portal Comercio</title>
+<link rel="stylesheet" href="vendor/fonts/fonts.css?v=20260628-vendor"/>
+<link rel="stylesheet" href="comercio/css/styles.css?v=20260721-dlv1"/>
+<link rel="stylesheet" href="comercio-v6/css/comercio-formal.css?v=20260928-stock2"/>
+<script>
+  // Tema V6: Día (formal tipo MKT) por defecto · Noche = slate-navy formal.
+  // localStorage envuelto: en contextos restringidos tira SecurityError y
+  // mataría el script entero (regla global CLAUDE.md).
+  function leerLocalCv6(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function guardarLocalCv6(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+  (function(){ if (leerLocalCv6('cv6_tema') !== 'noche') document.documentElement.classList.add('cv6-dia'); })();
+  function cv6ToggleTema(){
+    var dia = document.documentElement.classList.toggle('cv6-dia');
+    guardarLocalCv6('cv6_tema', dia ? 'dia' : 'noche');
+  }
+</script>
+
+  <!-- ═══════════ REDIRECT A SPLASH (primera carga de la sesión) ═══════════ -->
+  <script>
+    (function() {
+      try {
+        if (sessionStorage.getItem('mercadate_splash_seen_comercio') !== '1') {
+          // Marcar AHORA para evitar loop (por si el splash falla)
+          sessionStorage.setItem('mercadate_splash_seen_comercio', '1');
+          // Replace para no agregar entrada al historial
+          location.replace('splash.html');
+        }
+      } catch(e) {
+        // Si sessionStorage falla, seguir cargando la app normalmente
+      }
+    })();
+  </script>
+</head>
+<body>
+
+<!-- Pantalla de boot: init() la quita al terminar el check de sesión -->
+<div id="bootScreen" style="position:fixed;inset:0;background:#0f172a;display:flex;align-items:center;justify-content:center;z-index:10000">
+  <div style="text-align:center">
+    <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="MercaDate" style="height:56px;width:56px;object-fit:contain;border-radius:14px;margin-bottom:14px" onerror="this.style.display='none'">
+    <div style="color:#64748b;font-size:13px;letter-spacing:.5px">Verificando sesión…</div>
+  </div>
+</div>
+
+<div id="loginScreen" style="display:none">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="MercaDate" style="height:54px;width:54px;object-fit:contain;display:block;margin:0 auto 8px;border-radius:12px" onerror="this.style.display='none'">
+      <div class="logo-txt">Merca<em>date</em></div>
+      <div style="font-size:12px;color:var(--muted,#94a3b8);margin:2px 0 10px">El mejor precio, a la vuelta de la esquina</div>
+      <h2>Portal del Comercio</h2>
+      <p>Ingresa para gestionar tu negocio</p>
+    </div>
+    <div id="loginErr" class="login-err"></div>
+    <label>Usuario</label>
+    <input type="text" id="loginUser" class="login-input" placeholder="Tu usuario" autocomplete="username"/>
+    <label>Contraseña</label>
+    <input type="password" id="loginPass" class="login-input" placeholder="••••••••" autocomplete="current-password"/>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px" onclick="auth.login()">Iniciar Sesión</button>
+    <div style="text-align:center;margin-top:10px"><a onclick="auth.mostrarRecuperar()" style="color:var(--muted,#94a3b8);font-size:13px;cursor:pointer;text-decoration:underline">¿Olvidaste tu contraseña?</a></div>
+    <div class="login-footer">¿No tienes cuenta? <a onclick="auth.mostrarRegistro()">Regístrate aquí</a></div>
+  </div>
+</div>
+
+<!-- Modal recuperar contraseña comercio -->
+<div class="modal-overlay" id="recuperarModal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-head"><h3>Recuperar contraseña</h3>
+      <button class="btn btn-ghost btn-sm" onclick="app.cerrarModal('recuperarModal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Ingresa el correo asociado a tu comercio. Te enviaremos un enlace para crear una nueva contraseña.</p>
+      <input type="email" id="recEmail" class="login-input" placeholder="tucorreo@ejemplo.cl" autocomplete="email"/>
+      <div id="recMsg" style="font-size:13px;margin:10px 0;display:none"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;margin-top:8px" onclick="auth.enviarRecuperacion()">Enviar enlace</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ NUEVA CONTRASEÑA (desde enlace de correo) ══════════════════════ -->
+<div id="resetScreen" style="display:none">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="MercaDate" style="height:54px;width:54px;object-fit:contain;display:block;margin:0 auto 8px;border-radius:12px" onerror="this.style.display='none'">
+      <div class="logo-txt">Merca<em>date</em></div>
+      <h2>Crear nueva contraseña</h2>
+      <p>Portal del Comercio</p>
+    </div>
+    <div id="resetForm">
+      <label>Nueva contraseña</label>
+      <input type="password" id="resetP1" class="login-input" placeholder="Mínimo 6 caracteres" autocomplete="new-password"/>
+      <label>Repite la contraseña</label>
+      <input type="password" id="resetP2" class="login-input" placeholder="Repite la contraseña" autocomplete="new-password"/>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;margin-top:14px" onclick="auth.resetear()">Guardar contraseña</button>
+    </div>
+    <div id="resetMsg" style="font-size:13px;margin-top:14px;text-align:center;display:none"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ SELECCIÓN DE LOCAL ══════════════════════ -->
+<div id="selectLocalScreen">
+  <div class="login-card" style="max-width:520px">
+    <div class="login-header">
+      <div class="logo-txt">Merca<em>date</em></div>
+      <h2 id="selectTitle">Selecciona tu Local</h2>
+      <p>Elige el local que deseas administrar</p>
+    </div>
+    <div class="local-list" id="localList"></div>
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:20px" onclick="auth.logout()">Cerrar Sesión</button>
+  </div>
+</div>
+
+<!-- ══════════════════════ REGISTRO ══════════════════════ -->
+<div id="registerScreen">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="logo-txt">Merca<em>date</em></div>
+      <h2>Crear Cuenta</h2>
+      <p>Tu primer local empieza con plan Gratuito</p>
+    </div>
+    <div id="regErr" class="login-err"></div>
+    <label>Nombre del Local *</label>
+    <input type="text" id="regLocalNombre" class="login-input" placeholder="Ej: Almacén Don Pedro"/>
+    <label>Categoría *</label>
+    <select id="regLocalCategoria" class="login-input" onchange="regOnCatChange()">
+<option value="">Seleccionar tipo de comercio…</option>
+            <optgroup label="📦 Alimentos y abarrotes">
+              <option value="Almacén" data-tipo="productos">Almacén</option>
+              <option value="Minimarket" data-tipo="productos">Minimarket</option>
+              <option value="Supermercado" data-tipo="productos">Supermercado</option>
+              <option value="Mayorista / Distribuidora" data-tipo="productos">Mayorista / Distribuidora</option>
+              <option value="Verdulería / Frutería" data-tipo="productos">Verdulería / Frutería</option>
+              <option value="Carnicería" data-tipo="productos">Carnicería</option>
+              <option value="Pollería" data-tipo="productos">Pollería</option>
+              <option value="Pescadería" data-tipo="productos">Pescadería</option>
+              <option value="Panadería / Amasandería" data-tipo="productos" data-hibrido="gastronomia">Panadería / Amasandería</option>
+              <option value="Fiambrería" data-tipo="productos">Fiambrería</option>
+              <option value="Botillería" data-tipo="productos">Botillería</option>
+              <option value="Vinería" data-tipo="productos">Vinería</option>
+              <option value="Confitería / Dulcería" data-tipo="productos">Confitería / Dulcería</option>
+              <option value="Tienda naturista / A granel" data-tipo="productos">Tienda naturista / A granel</option>
+              <option value="Emporio / Gourmet" data-tipo="productos">Emporio / Gourmet</option>
+            </optgroup>
+            <optgroup label="📦 Salud y cuidado">
+              <option value="Farmacia" data-tipo="productos" data-hibrido="servicios">Farmacia</option>
+              <option value="Farmacia natural / Herboristería" data-tipo="productos">Farmacia natural / Herboristería</option>
+              <option value="Perfumería / Cosmética" data-tipo="productos">Perfumería / Cosmética</option>
+              <option value="Óptica" data-tipo="productos" data-hibrido="servicios">Óptica</option>
+              <option value="Ortopedia / Insumos médicos" data-tipo="productos">Ortopedia / Insumos médicos</option>
+              <option value="Pañalera / Tienda bebé" data-tipo="productos">Pañalera / Tienda bebé</option>
+            </optgroup>
+            <optgroup label="📦 Hogar y construcción">
+              <option value="Ferretería" data-tipo="productos" data-hibrido="servicios">Ferretería</option>
+              <option value="Pinturería" data-tipo="productos">Pinturería</option>
+              <option value="Barraca / Materiales" data-tipo="productos">Barraca / Materiales</option>
+              <option value="Bazar" data-tipo="productos">Bazar</option>
+              <option value="Menaje / Cocina" data-tipo="productos">Menaje / Cocina</option>
+              <option value="Mueblería / Decoración" data-tipo="productos">Mueblería / Decoración</option>
+              <option value="Vivero / Plantas" data-tipo="productos">Vivero / Plantas</option>
+              <option value="Floristería" data-tipo="productos" data-hibrido="servicios">Floristería</option>
+            </optgroup>
+            <optgroup label="📦 Moda y estilo">
+              <option value="Ropa / Vestuario" data-tipo="productos" data-hibrido="servicios">Ropa / Vestuario</option>
+              <option value="Zapatería / Calzado" data-tipo="productos">Zapatería / Calzado</option>
+              <option value="Tienda de telas / Mercería" data-tipo="productos">Tienda de telas / Mercería</option>
+              <option value="Joyería" data-tipo="productos">Joyería</option>
+              <option value="Relojería" data-tipo="productos" data-hibrido="servicios">Relojería</option>
+              <option value="Accesorios / Marroquinería" data-tipo="productos">Accesorios / Marroquinería</option>
+              <option value="Tienda deportiva" data-tipo="productos">Tienda deportiva</option>
+            </optgroup>
+            <optgroup label="📦 Tecnología">
+              <option value="Electrónica" data-tipo="productos" data-hibrido="servicios">Electrónica</option>
+              <option value="Telefonía / Celulares" data-tipo="productos" data-hibrido="servicios">Telefonía / Celulares</option>
+              <option value="Computación" data-tipo="productos" data-hibrido="servicios">Computación</option>
+              <option value="Videojuegos" data-tipo="productos">Videojuegos</option>
+            </optgroup>
+            <optgroup label="📦 Mascotas">
+              <option value="Pet shop / Tienda mascotas" data-tipo="productos" data-hibrido="servicios">Pet shop / Tienda mascotas</option>
+            </optgroup>
+            <optgroup label="📦 Otros">
+              <option value="Librería / Papelería" data-tipo="productos">Librería / Papelería</option>
+              <option value="Libros / Segunda mano" data-tipo="productos">Libros / Segunda mano</option>
+              <option value="Juguetería" data-tipo="productos">Juguetería</option>
+              <option value="Regalos / Cotillón" data-tipo="productos">Regalos / Cotillón</option>
+              <option value="Cigarrería / Vapeo" data-tipo="productos">Cigarrería / Vapeo</option>
+              <option value="Bicicletería" data-tipo="productos" data-hibrido="servicios">Bicicletería</option>
+              <option value="Compraventa / Usados" data-tipo="productos">Compraventa / Usados</option>
+              <option value="Kiosco" data-tipo="productos">Kiosco</option>
+              <option value="Otros Productos →" data-tipo="productos">Otros Productos →</option>
+            </optgroup>
+            <optgroup label="🤲 Belleza y cuidado personal">
+              <option value="Peluquería" data-tipo="servicios" data-hibrido="productos">Peluquería</option>
+              <option value="Barbería" data-tipo="servicios" data-hibrido="productos">Barbería</option>
+              <option value="Manicure / Pedicure" data-tipo="servicios">Manicure / Pedicure</option>
+              <option value="Spa / Estética" data-tipo="servicios" data-hibrido="productos">Spa / Estética</option>
+              <option value="Depilación" data-tipo="servicios">Depilación</option>
+              <option value="Tatuajes / Piercings" data-tipo="servicios">Tatuajes / Piercings</option>
+              <option value="Masajes / Quiromasaje" data-tipo="servicios">Masajes / Quiromasaje</option>
+            </optgroup>
+            <optgroup label="🤲 Salud profesional">
+              <option value="Consulta Médica" data-tipo="servicios">Consulta Médica</option>
+              <option value="Dentista / Odontología" data-tipo="servicios">Dentista / Odontología</option>
+              <option value="Oftalmólogo" data-tipo="servicios">Oftalmólogo</option>
+              <option value="Psicólogo" data-tipo="servicios">Psicólogo</option>
+              <option value="Kinesiólogo / Fisioterapia" data-tipo="servicios">Kinesiólogo / Fisioterapia</option>
+              <option value="Nutricionista" data-tipo="servicios">Nutricionista</option>
+              <option value="Matrona" data-tipo="servicios">Matrona</option>
+              <option value="Podología" data-tipo="servicios">Podología</option>
+              <option value="Centro médico / Policlínico" data-tipo="servicios">Centro médico / Policlínico</option>
+            </optgroup>
+            <optgroup label="🤲 Técnicos del hogar">
+              <option value="Gasfíter" data-tipo="servicios">Gasfíter</option>
+              <option value="Electricista" data-tipo="servicios">Electricista</option>
+              <option value="Cerrajería" data-tipo="servicios" data-hibrido="productos">Cerrajería</option>
+              <option value="Maestro / Albañil" data-tipo="servicios">Maestro / Albañil</option>
+              <option value="Vidriería / Aluminios" data-tipo="servicios">Vidriería / Aluminios</option>
+              <option value="Climatización / Refrigeración" data-tipo="servicios">Climatización / Refrigeración</option>
+              <option value="Fumigación / Control de plagas" data-tipo="servicios">Fumigación / Control de plagas</option>
+              <option value="Jardinería / Paisajismo" data-tipo="servicios">Jardinería / Paisajismo</option>
+              <option value="Aseo / Limpieza" data-tipo="servicios">Aseo / Limpieza</option>
+            </optgroup>
+            <optgroup label="🤲 Reparaciones">
+              <option value="Taller Mecánico" data-tipo="servicios" data-hibrido="productos">Taller Mecánico</option>
+              <option value="Taller de motos" data-tipo="servicios">Taller de motos</option>
+              <option value="Vulcanización / Neumáticos" data-tipo="servicios">Vulcanización / Neumáticos</option>
+              <option value="Lavado de autos" data-tipo="servicios">Lavado de autos</option>
+              <option value="Reparación Celulares" data-tipo="servicios" data-hibrido="productos">Reparación Celulares</option>
+              <option value="Reparación Computadores" data-tipo="servicios" data-hibrido="productos">Reparación Computadores</option>
+              <option value="Reparación electrodomésticos" data-tipo="servicios">Reparación electrodomésticos</option>
+              <option value="Zapatero / Compostura" data-tipo="servicios">Zapatero / Compostura</option>
+              <option value="Tapicería" data-tipo="servicios">Tapicería</option>
+              <option value="Relojería (reparación)" data-tipo="servicios" data-hibrido="productos">Relojería (reparación)</option>
+            </optgroup>
+            <optgroup label="🤲 Vestuario y textil">
+              <option value="Sastre / Costurera / Modista" data-tipo="servicios">Sastre / Costurera / Modista</option>
+              <option value="Arreglos de ropa" data-tipo="servicios">Arreglos de ropa</option>
+              <option value="Bordados / Estampados" data-tipo="servicios">Bordados / Estampados</option>
+              <option value="Lavandería / Tintorería" data-tipo="servicios">Lavandería / Tintorería</option>
+            </optgroup>
+            <optgroup label="🤲 Mascotas">
+              <option value="Veterinaria" data-tipo="servicios" data-hibrido="productos">Veterinaria</option>
+              <option value="Peluquería canina" data-tipo="servicios">Peluquería canina</option>
+              <option value="Paseador de mascotas" data-tipo="servicios">Paseador de mascotas</option>
+              <option value="Guardería / Hotel mascotas" data-tipo="servicios">Guardería / Hotel mascotas</option>
+            </optgroup>
+            <optgroup label="🤲 Educación">
+              <option value="Academia / Clases" data-tipo="servicios">Academia / Clases</option>
+              <option value="Preuniversitario" data-tipo="servicios">Preuniversitario</option>
+              <option value="Clases de música" data-tipo="servicios">Clases de música</option>
+              <option value="Clases de idiomas" data-tipo="servicios">Clases de idiomas</option>
+              <option value="Autoescuela" data-tipo="servicios">Autoescuela</option>
+              <option value="Jardín infantil / Sala cuna" data-tipo="servicios">Jardín infantil / Sala cuna</option>
+            </optgroup>
+            <optgroup label="🤲 Bienestar y deporte">
+              <option value="Gimnasio / Fitness" data-tipo="servicios">Gimnasio / Fitness</option>
+              <option value="Yoga / Pilates" data-tipo="servicios">Yoga / Pilates</option>
+              <option value="Artes marciales" data-tipo="servicios">Artes marciales</option>
+              <option value="Danza / Baile" data-tipo="servicios">Danza / Baile</option>
+            </optgroup>
+            <optgroup label="🤲 Profesionales">
+              <option value="Contador / Asesoría contable" data-tipo="servicios">Contador / Asesoría contable</option>
+              <option value="Abogado / Notaría" data-tipo="servicios">Abogado / Notaría</option>
+              <option value="Inmobiliaria / Corretaje" data-tipo="servicios">Inmobiliaria / Corretaje</option>
+              <option value="Fotografía / Estudio" data-tipo="servicios">Fotografía / Estudio</option>
+              <option value="Fotocopias / Imprenta" data-tipo="servicios">Fotocopias / Imprenta</option>
+              <option value="Diseño gráfico / Publicidad" data-tipo="servicios">Diseño gráfico / Publicidad</option>
+            </optgroup>
+            <optgroup label="🤲 Pagos y logística">
+              <option value="Caja Vecina" data-tipo="servicios">Caja Vecina</option>
+              <option value="Pago de cuentas" data-tipo="servicios">Pago de cuentas</option>
+              <option value="Recargas" data-tipo="servicios">Recargas</option>
+              <option value="Encomiendas / PUDO" data-tipo="servicios">Encomiendas / PUDO</option>
+              <option value="Fletes / Mudanzas" data-tipo="servicios">Fletes / Mudanzas</option>
+              <option value="Estacionamiento" data-tipo="servicios">Estacionamiento</option>
+            </optgroup>
+            <optgroup label="🤲 Otros servicios">
+              <option value="Otros Servicios →" data-tipo="servicios">Otros Servicios →</option>
+            </optgroup>
+            <optgroup label="🍴 Comida establecida">
+              <option value="Restaurante" data-tipo="gastronomia">Restaurante</option>
+              <option value="Fonda / Picada" data-tipo="gastronomia">Fonda / Picada</option>
+              <option value="Cocinería / Comida casera" data-tipo="gastronomia">Cocinería / Comida casera</option>
+              <option value="Rotisería" data-tipo="gastronomia">Rotisería</option>
+              <option value="Comida por kilo / Bufé" data-tipo="gastronomia">Comida por kilo / Bufé</option>
+            </optgroup>
+            <optgroup label="🍴 Comida rápida">
+              <option value="Hamburguesería" data-tipo="gastronomia">Hamburguesería</option>
+              <option value="Pizzería" data-tipo="gastronomia">Pizzería</option>
+              <option value="Sándwichería / Completos" data-tipo="gastronomia">Sándwichería / Completos</option>
+              <option value="Empanadas" data-tipo="gastronomia">Empanadas</option>
+              <option value="Pollos fritos / Asados al paso" data-tipo="gastronomia">Pollos fritos / Asados al paso</option>
+              <option value="Sushi / Japonés" data-tipo="gastronomia">Sushi / Japonés</option>
+              <option value="Comida China" data-tipo="gastronomia">Comida China</option>
+              <option value="Comida Peruana" data-tipo="gastronomia">Comida Peruana</option>
+              <option value="Comida mexicana / Taquería" data-tipo="gastronomia">Comida mexicana / Taquería</option>
+              <option value="Comida árabe / Shawarma" data-tipo="gastronomia">Comida árabe / Shawarma</option>
+              <option value="Comida venezolana / Arepas" data-tipo="gastronomia">Comida venezolana / Arepas</option>
+              <option value="Pastas / Italiano" data-tipo="gastronomia">Pastas / Italiano</option>
+            </optgroup>
+            <optgroup label="🍴 Especialidades">
+              <option value="Parrilla / Asados" data-tipo="gastronomia">Parrilla / Asados</option>
+              <option value="Mariscos / Cevichería" data-tipo="gastronomia">Mariscos / Cevichería</option>
+              <option value="Vegetariano / Vegano" data-tipo="gastronomia">Vegetariano / Vegano</option>
+            </optgroup>
+            <optgroup label="🍴 Cafetería y dulces">
+              <option value="Café / Cafetería" data-tipo="gastronomia" data-hibrido="productos">Café / Cafetería</option>
+              <option value="Pastelería / Repostería" data-tipo="gastronomia" data-hibrido="productos">Pastelería / Repostería</option>
+              <option value="Heladería" data-tipo="gastronomia">Heladería</option>
+              <option value="Jugos / Smoothies" data-tipo="gastronomia">Jugos / Smoothies</option>
+              <option value="Crepería / Waffles" data-tipo="gastronomia">Crepería / Waffles</option>
+            </optgroup>
+            <optgroup label="🍴 Bebidas y social">
+              <option value="Bar / Cantina" data-tipo="gastronomia">Bar / Cantina</option>
+              <option value="Pub / Cervecería" data-tipo="gastronomia">Pub / Cervecería</option>
+              <option value="Schopería" data-tipo="gastronomia">Schopería</option>
+              <option value="Fuente de Soda" data-tipo="gastronomia">Fuente de Soda</option>
+              <option value="Coctelería" data-tipo="gastronomia">Coctelería</option>
+            </optgroup>
+            <optgroup label="🍴 Otros gastronomía">
+              <option value="Desayunos / Brunch" data-tipo="gastronomia">Desayunos / Brunch</option>
+              <option value="Food truck" data-tipo="gastronomia">Food truck</option>
+              <option value="Banquetería / Eventos" data-tipo="gastronomia" data-hibrido="servicios">Banquetería / Eventos</option>
+              <option value="Otros Gastronomía →" data-tipo="gastronomia">Otros Gastronomía →</option>
+            </optgroup>
+          </select>
+    <!-- Sugerencia híbrido (registro) -->
+    <div id="regHibridoSugg" style="display:none;background:rgba(184,163,255,.1);border:1px solid rgba(184,163,255,.3);border-radius:10px;padding:12px 14px;margin-top:8px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">💡 <span id="regHibridoMsg"></span></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Puedes comenzar solo en tu rubro principal y activar el segundo después.</div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn btn-primary btn-sm" onclick="regActivarHibrido()">Sí, activar</button>
+        <button type="button" class="btn btn-sm" style="background:var(--border)" onclick="document.getElementById('regHibridoSugg').style.display='none';document.getElementById('reg_hibrido').value=''">No por ahora</button>
+      </div>
+    </div>
+    <div id="regHibridoRubroWrap" style="display:none;margin-top:8px">
+      <label>Rubro secundario</label>
+      <select id="reg_rubroSecundario" class="login-input">
+        <option value="productos">📦 Productos</option>
+        <option value="servicios">🤲 Servicios</option>
+        <option value="gastronomia">🍴 Gastronomía</option>
+      </select>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Los ítems de ambos rubros comparten el mismo cupo del plan.</div>
+    </div>
+    <input type="hidden" id="reg_hibrido" value=""/>
+    <label>Dirección</label>
+    <input type="text" id="regLocalDir" class="login-input" placeholder="Av. Principal 123"/>
+    <label>Comuna *</label>
+    <input type="text" id="regLocalComuna" class="login-input" placeholder="Ej: Providencia"/>
+    <label>Usuario *</label>
+    <input type="text" id="regUser" class="login-input" placeholder="Nombre de usuario"/>
+    <label>Contraseña * <span style="color:var(--muted);font-weight:400;text-transform:none">(mínimo 6)</span></label>
+    <input type="password" id="regPass" class="login-input" placeholder="••••••••"/>
+    <label>WhatsApp del Administrador * <span style="color:var(--muted);font-weight:400;text-transform:none">(para contacto MercaDate, no se mostrará a clientes)</span></label>
+    <input type="text" id="regWspAdmin" class="login-input" placeholder="+56 9 1234 5678"/>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px" onclick="auth.registrar()">Crear Cuenta</button>
+    <div class="login-footer">¿Ya tienes cuenta? <a onclick="auth.mostrarLogin()">Inicia sesión</a></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ APP PRINCIPAL ══════════════════════ -->
+<div id="appScreen">
+  <div class="app-wrap">
+    <aside class="sidebar">
+      <!-- Cabecera fija -->
+      <div class="side-head">
+        <div class="logo">Merca<em>date</em></div>
+        <div class="logo-context" id="sideLocalName" onclick="app.mostrar('locales')" title="Ver todos mis locales">📍 Cargando...</div>
+
+        <!-- Fila de acciones del local: estado + vista pública (compacto) -->
+        <div class="side-top-row">
+          <div class="estado-pill" id="sideEstadoPill" onclick="cdashboard.abrirEstadoModal()" title="Cambiar estado del local">
+            <span id="sideEstadoBadge">🟢 Abierto</span>
+          </div>
+          <button class="side-preview-btn" onclick="cdashboard.abrirVistaPublica()" title="Ver mi local — así te ven los clientes">Ver</button>
+        </div>
+      </div>
+
+      <!-- Navegación (única zona con scroll si falta espacio) -->
+      <nav class="side-nav">
+
+        <!-- ── OPERACIÓN ── -->
+        <div class="side-group" id="sg-operacion">
+          <div class="side-group-head" onclick="sideToggle('sg-operacion')">
+            <span>Operación</span><em class="sgchev">▾</em>
+          </div>
+          <div class="side-group-body">
+            <button class="nav-btn active" id="nav-cdashboard" onclick="app.mostrar('cdashboard')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg>Dashboard</button>
+            <button class="nav-btn" id="nav-productos"  onclick="app.mostrar('productos')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg>Inventario</button>
+            <button class="nav-btn" id="nav-alertas"    onclick="app.mostrar('alertas')">
+              <svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Alertas <span id="alertasBadge" class="badge-alert">0</span>
+            </button>
+            <button class="nav-btn" id="nav-mensajes" data-flag="comercio_mensajes"  onclick="app.mostrar('mensajes')">
+              <svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Mensajes <span id="cMensajesBadge" class="badge-alert">0</span>
+            </button>
+            <button class="nav-btn" id="nav-delivery" data-flag="delivery"           onclick="app.mostrar('delivery')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6h3l3 7M5.5 17.5L9 9h6l3.5 8.5"/></svg>Delivery</button>
+          </div>
+        </div>
+
+        <!-- ── NEGOCIO ── -->
+        <div class="side-group collapsed" id="sg-negocio">
+          <div class="side-group-head" onclick="sideToggle('sg-negocio')">
+            <span>Negocio</span><em class="sgchev">▾</em>
+          </div>
+          <div class="side-group-body">
+            <button class="nav-btn" id="nav-locales"   onclick="app.mostrar('locales')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9M4 9v11h16V9M9 20v-6h6v6"/></svg>Mis locales</button>
+            <button class="nav-btn" id="nav-membresia" onclick="app.mostrar('membresia')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Membresía</button>
+          </div>
+        </div>
+
+        <!-- ── MI CUENTA ── -->
+        <div class="side-group collapsed" id="sg-cuenta">
+          <div class="side-group-head" onclick="sideToggle('sg-cuenta')">
+            <span>Mi Cuenta</span><em class="sgchev">▾</em>
+          </div>
+          <div class="side-group-body">
+            <button class="nav-btn" id="nav-cuenta" onclick="app.mostrar('cuenta')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Configuración</button>
+            <button class="nav-btn nav-btn-sm" onclick="window.open('legal/terminos.html','_blank')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg>Términos</button>
+            <button class="nav-btn nav-btn-sm" onclick="window.open('legal/acerca-comercio.html','_blank')"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Acerca de Mercadate</button>
+          </div>
+        </div>
+
+        <!-- ── PLAN ── -->
+        <div class="side-group collapsed" id="sg-plan">
+          <div class="side-group-head" onclick="sideToggle('sg-plan')">
+            <span>Plan</span><em class="sgchev">▾</em>
+          </div>
+          <div class="side-group-body">
+            <div class="plan-widget" style="margin:4px 0 2px">
+              <div class="pw-name" id="sidePlanName">—</div>
+              <div class="pw-bar-bg"><div class="pw-bar" id="sidePlanBar" style="width:0%"></div></div>
+              <div class="pw-count" id="sidePlanCount">0 / 0 activos</div>
+            </div>
+          </div>
+        </div>
+
+      </nav>
+
+      <!-- Pie fijo: siempre visible -->
+      <div class="side-foot">
+        <button class="nav-btn nav-btn-sm cv6-tema-btn" onclick="cv6ToggleTema()" title="Cambiar Día / Noche"><span class="cv6-tema-dia">Modo día</span><span class="cv6-tema-noche">Modo noche</span></button>
+        <button class="nav-btn nav-btn-sm" onclick="auth.logout()" style="color:var(--err)"><svg class="cv6-ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Cerrar sesión</button>
+      </div>
+    </aside>
+    <!-- Móvil (≤820px): el sidebar se vuelve hoja inferior "Más"; fondo para cerrarla -->
+    <div class="cv6-mas-fondo" onclick="cv6Mas(false)"></div>
+
+    <main class="main">
+
+      <!-- ═══ DASHBOARD COMERCIO (Sprint 1) ═══ -->
+      <section id="cdashboard" class="section active">
+        <div class="page-header">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
+            <div>
+              <h2>Mi Dashboard</h2>
+              <p>Resumen de tu local y métricas clave</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="cdashboard.cargar()">🔄 Refrescar</button>
+          </div>
+        </div>
+
+        <!-- Banner de notificaciones inteligentes -->
+        <div id="cdNotifs" style="margin-bottom:18px"></div>
+
+        <!-- KPIs principales -->
+        <div class="cd-kpi-grid">
+          <div class="cd-kpi-card" id="cdKpiClicks"></div>
+          <div class="cd-kpi-card" id="cdKpiCupo"></div>
+          <div class="cd-kpi-card" id="cdKpiPlan"></div>
+          <div class="cd-kpi-card" id="cdKpiEstado"></div>
+        </div>
+
+        <!-- Paneles de detalle: llenan la pantalla, cada uno con scroll propio -->
+        <div class="cd-dash-panels">
+          <div class="card">
+            <h3>Productos sin foto</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Productos con foto reciben 3x más clics</p>
+            <div id="cdSinFoto"></div>
+          </div>
+          <div class="card">
+            <h3>Productos sin actualizar</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Más de 30 días sin cambios</p>
+            <div id="cdDesact"></div>
+          </div>
+          <div class="card">
+            <h3>Productos que más interesan</h3>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Top productos según clics en WhatsApp (30 días)</p>
+            <div id="cdTopClicks"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ INVENTARIO ═══ -->
+      <section id="productos" class="section">
+        <div class="page-header">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
+            <div>
+              <h2 id="mainLocalTitle">Inventario</h2>
+              <p id="mainLocalSub">Gestión de productos y servicios</p>
+            </div>
+            <div class="cv6-inv-acciones">
+              <button class="btn btn-ghost" id="cv6BtnEscanear" onclick="escanerStock.abrir()">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>
+                Escanear</button>
+              <button class="btn btn-primary" id="btnNuevoProd" onclick="productos.abrirAgregarNuevo()">Agregar nuevo</button>
+            </div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val" id="statTotal">0</div><div class="stat-lbl">Total</div></div>
+          <div class="stat-box"><div class="stat-val" id="statActivos" style="color:var(--ok)">0</div><div class="stat-lbl">🟢 Activos</div></div>
+          <div class="stat-box"><div class="stat-val" id="statPausados" style="color:var(--warn)">0</div><div class="stat-lbl">🟡 Pausados</div></div>
+          <div class="stat-box"><div class="stat-val" id="statRestringidos" style="color:var(--err)">0</div><div class="stat-lbl">🔴 Restringidos</div></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:14px;flex-wrap:wrap">
+            <h3 style="margin:0">Listado</h3>
+            <div style="display:flex;gap:10px;flex:1;max-width:460px">
+              <input type="text" id="busqueda" placeholder="Buscar por nombre o marca..." oninput="productos.renderTabla()"/>
+              <button class="btn btn-ghost btn-sm" onclick="productos.descargarInventario()" title="Descargar mi inventario en Excel">📥 Excel</button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Producto</th><th>Categoría</th><th>Precio</th>
+                <th>Estado</th><th>Actualizado</th><th style="text-align:right">Acciones</th>
+              </tr></thead>
+              <tbody id="tablaProductos"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ MIS LOCALES ═══ -->
+      <section id="locales" class="section">
+        <div class="page-header">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">
+            <div><h2>Mis Locales</h2><p>Cada local tiene su propia membresía independiente</p></div>
+            <button class="btn btn-primary" onclick="locales.abrirNuevo()">➕ Agregar Local</button>
+          </div>
+        </div>
+        <div class="locales-grid" id="localesGrid"></div>
+      </section>
+
+      <!-- ═══ MEMBRESÍA ═══ -->
+      <section id="membresia" class="section">
+        <div class="page-header"><h2>Membresía</h2><p>Plan del local <strong id="mbLocalNombre">—</strong></p></div>
+
+        <div class="card" style="margin-bottom:22px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">
+            <div>
+              <div style="font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px">Plan Activo</div>
+              <div style="font-size:26px;font-weight:800;color:var(--accent)" id="mbPlanNombre">—</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:2px" id="mbRenovacion"></div>
+            </div>
+            <div style="text-align:right">
+              <div id="mbBadge" class="badge badge-accent" style="font-size:13px;padding:6px 14px">—</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:8px" id="mbProgTxt">—</div>
+            </div>
+          </div>
+          <div style="margin-top:18px;background:var(--border);border-radius:10px;height:8px;overflow:hidden">
+            <div id="mbFill" style="height:8px;border-radius:10px;background:var(--accent);transition:width .4s;width:0%"></div>
+          </div>
+          <div id="mbDowngradeAlert" style="display:none;margin-top:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;font-size:13px;color:#92400e">
+            ⏰ <strong>Downgrade programado:</strong> <span id="mbDowngradeTxt"></span>
+            <button class="btn btn-ghost btn-sm" style="margin-left:10px" onclick="membresia.cancelarDowngrade()">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Canje de código promocional -->
+        <div class="card" style="margin-bottom:22px">
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:4px">¿Tienes un código promocional?</h3>
+          <p id="mbPromoHint" style="font-size:13px;color:var(--muted);margin-bottom:12px">Ingresa el código para acceder a un beneficio temporal (descuento o más productos).</p>
+          <div id="mbPromoActiva" style="display:none;background:rgba(16,185,129,0.12);border:1px solid #10b981;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:#10b981"></div>
+          <div id="mbCanjeBox" style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="mbCodigoInput" placeholder="Ej: RADIOACTIVA" style="flex:1;min-width:160px;text-transform:uppercase"/>
+            <button class="btn btn-primary" onclick="membresia.canjearCodigo()">Aplicar código</button>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom:16px;font-size:16px;font-weight:700">Cambiar Plan</h3>
+        <div class="planes-grid" id="planesGrid"></div>
+
+        <div id="cambioBox" style="display:none"></div>
+      </section>
+
+      <!-- ═══ MI CUENTA ═══ -->
+      <section id="cuenta" class="section">
+        <div class="page-header"><h2>Mi Cuenta</h2><p>Configuración y seguridad</p></div>
+        <div class="cuenta-grid">
+          <div class="cuenta-card">
+            <h4>👤 Información de Cuenta</h4>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Usuario</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:16px" id="cuentaUsuario">—</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Locales registrados</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:16px" id="cuentaLocalesCount">—</div>
+            <label>WhatsApp del Administrador <span style="color:var(--muted);font-weight:400;text-transform:none">(privado, para contacto con MercaDate)</span></label>
+            <div style="display:flex;gap:10px">
+              <input type="text" id="cuentaWspAdmin" placeholder="+56 9 1234 5678"/>
+              <button class="btn btn-primary btn-sm" onclick="cuenta.guardarWspAdmin()">Guardar</button>
+            </div>
+          </div>
+
+          <div class="cuenta-card">
+            <h4>📱 WhatsApp Público del Local</h4>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px" id="cuentaWspPublicoInfo">
+              Disponible al pagar un plan. Será el número que verán los clientes.
+            </div>
+            <input type="text" id="cuentaWspPublico" placeholder="+56 9 1234 5678" disabled/>
+            <button class="btn btn-primary btn-sm" id="cuentaWspPublicoBtn" onclick="cuenta.guardarWspPublico()" disabled style="margin-top:10px;width:100%">Guardar</button>
+          </div>
+
+          <div class="cuenta-card" style="grid-column:1/-1">
+            <h4>🔒 Cambiar Contraseña</h4>
+            <div class="form-grid-3">
+              <div class="fg">
+                <label>Contraseña Actual</label>
+                <input type="password" id="passActual"/>
+              </div>
+              <div class="fg">
+                <label>Nueva (mínimo 6)</label>
+                <input type="password" id="passNueva"/>
+              </div>
+              <div class="fg">
+                <label>Confirmar Nueva</label>
+                <input type="password" id="passConfirm"/>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="cuenta.cambiarPassword()">Actualizar Contraseña</button>
+          </div>
+
+          <!-- Centro de Ayuda -->
+          <div class="cuenta-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(59,130,246,0.02));border-color:#3b82f6">
+            <h4>❓ Centro de Ayuda</h4>
+            <p style="font-size:13px;color:var(--muted);margin-bottom:12px">
+              ¿Necesitas ayuda con la app? ¿Tienes sugerencias o problemas técnicos? Comunícate directamente con el equipo de MercaDate.
+            </p>
+            <button class="btn btn-primary" onclick="cuenta.abrirAyuda()" style="background:#3b82f6;border-color:#3b82f6">
+              ❓ Abrir Centro de Ayuda
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ALERTAS ═══ -->
+      <section id="mensajes" class="section">
+        <div class="page-header"><h2>Mensajes</h2><p>Conversaciones con el equipo de MercaDate. Responde aquí para mantener el hilo.</p></div>
+        <div class="cmsg-layout">
+          <div class="cmsg-list" id="cmsgList"><div class="cmsg-empty">Cargando…</div></div>
+          <div class="cmsg-thread" id="cmsgThread">
+            <div class="cmsg-thread-empty" id="cmsgThreadEmpty">
+              <div style="font-size:38px">💬</div>
+              <p>Selecciona una conversación.</p>
+            </div>
+            <div id="cmsgThreadView" style="display:none;flex-direction:column;height:100%">
+              <div class="cmsg-thread-header" id="cmsgThreadHeader"></div>
+              <div class="cmsg-thread-body" id="cmsgThreadBody"></div>
+              <div class="cmsg-reply">
+                <div id="cmsgQuickChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+                <textarea id="cmsgReplyInput" rows="2" placeholder="Escribe tu respuesta…" maxlength="500"></textarea>
+                <div id="cmsgCharCount" style="font-size:11px;color:var(--muted);text-align:right;margin-top:2px">0 / 500</div>
+                <button class="btn btn-primary btn-sm" onclick="mensajes.responder()">📤 Responder</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="delivery" class="section">
+        <div class="page-header"><h2>Delivery</h2><p>Configura tu despacho y gestiona los pedidos. El reparto y el cobro son tuyos: MercaDate es el canal.</p></div>
+        <div class="card">
+          <h3 style="margin-top:0">Configuración</h3>
+          <div id="dlvConfig"><div class="dlv-empty">Cargando…</div></div>
+        </div>
+        <div class="card">
+          <div class="dlv-kpis" id="dlvStats"></div>
+        </div>
+        <div class="card">
+          <div class="dlv-tabs">
+            <button class="dlv-tab active" data-filtro="activos"   onclick="cdelivery.filtrar('activos',this)">Activos</button>
+            <button class="dlv-tab"        data-filtro="historial" onclick="cdelivery.filtrar('historial',this)">Historial</button>
+          </div>
+          <div id="dlvPedidos"><div class="dlv-empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <section id="alertas" class="section">
+        <div class="page-header"><h2>Alertas de Precios</h2><p>Reportes de usuarios sobre tus productos</p></div>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Producto</th><th>Precio Reportado</th><th>Estado</th><th>Fecha</th></tr></thead>
+              <tbody id="alertasTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Barra inferior estilo MKT (solo ≤820px). Llama a las mismas secciones
+       que el sidebar (app.mostrar); "Más" abre el sidebar completo como hoja. -->
+  <nav class="cv6-bnav" aria-label="Navegación principal">
+    <button class="cv6-bn" data-sec="cdashboard" onclick="cv6Ir('cdashboard')">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z"/></svg><span>Inicio</span></button>
+    <button class="cv6-bn" data-sec="productos" onclick="cv6Ir('productos')">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/></svg><span>Inventario</span></button>
+    <button class="cv6-bn" data-sec="alertas" onclick="cv6Ir('alertas')">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>Alertas</span><b class="cv6-bn-badge" data-espejo="alertasBadge" hidden></b></button>
+    <button class="cv6-bn" data-sec="mensajes" data-espejo-nav="nav-mensajes" onclick="cv6Ir('mensajes')">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Mensajes</span><b class="cv6-bn-badge" data-espejo="cMensajesBadge" hidden></b></button>
+    <button class="cv6-bn" data-sec="mas" onclick="cv6Mas()">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg><span>Más</span></button>
+  </nav>
+</div>
+
+<!-- ════════════ MODALES ════════════ -->
+
+<!-- MODAL: PRODUCTO -->
+<!-- ═══ MODAL V6: Escanear código de barras → stock (js/escaner-stock.js) ═══ -->
+<div class="modal-overlay" id="cv6ScanModal">
+  <div class="modal cv6-scan">
+    <div class="cv6-scan-top"><h3>Escanear producto</h3><button class="btn btn-ghost btn-sm" onclick="escanerStock.cerrar()">Cerrar</button></div>
+
+    <div id="cv6ScanPasoLeer">
+      <div class="modal-sub">Apunta la cámara al código de barras del producto.</div>
+      <div id="cv6ScanLector" class="cv6-scan-lector"></div>
+      <div id="cv6ScanAviso" class="cv6-scan-aviso"></div>
+      <div class="cv6-scan-manual">
+        <input id="cv6ScanManual" inputmode="numeric" autocomplete="off" placeholder="O escribe el código (ej: 7801234567890)" onkeydown="if(event.key==='Enter')escanerStock.usarManual()"/>
+        <button class="btn btn-ghost" onclick="escanerStock.usarManual()">Buscar</button>
+      </div>
+    </div>
+
+    <div id="cv6ScanPasoExiste" hidden>
+      <div class="cv6-scan-prod">
+        <div class="cv6-scan-k">En tu inventario</div>
+        <div class="cv6-scan-n" id="cv6ScanNombre">—</div>
+        <div class="cv6-scan-c">Código <span id="cv6ScanCodigo">—</span></div>
+        <div class="cv6-scan-stock"><span>Stock actual</span><b id="cv6ScanStock">—</b></div>
+      </div>
+      <div class="fg"><label>Cantidad</label><input id="cv6ScanCant" type="number" min="0" inputmode="numeric" value="1"/></div>
+      <div class="cv6-scan-btns">
+        <button class="btn btn-primary" onclick="escanerStock.guardarStock('sumar')">Sumar al stock</button>
+        <button class="btn btn-ghost" onclick="escanerStock.guardarStock('fijar')">Fijar como stock total</button>
+      </div>
+      <button class="btn btn-ghost btn-sm cv6-scan-otro" onclick="escanerStock.siguiente()">Escanear otro</button>
+    </div>
+
+    <div id="cv6ScanPasoNuevo" hidden>
+      <div class="cv6-scan-prod">
+        <div class="cv6-scan-k">Producto nuevo</div>
+        <div class="cv6-scan-c">Código <span id="cv6ScanNuevoCodigo">—</span> · no está en tu inventario</div>
+      </div>
+      <div class="fg"><label>Nombre *</label><input id="cv6NNombre" placeholder="Ej: Aceite Belmont 1 L"/></div>
+      <div class="form-grid-3">
+        <div class="fg"><label>Precio ($) *</label><input id="cv6NPrecio" type="number" min="0" inputmode="numeric" placeholder="0"/></div>
+        <div class="fg"><label>Stock inicial</label><input id="cv6NStock" type="number" min="0" inputmode="numeric" value="1"/></div>
+        <div class="fg"><label>Categoría</label><select id="cv6NCategoria"></select></div>
+      </div>
+      <div class="cv6-scan-btns">
+        <button class="btn btn-primary" onclick="escanerStock.guardarNuevo()">Guardar producto</button>
+        <button class="btn btn-ghost" onclick="escanerStock.siguiente()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3 id="modalTitle">Producto</h3>
+    <div class="modal-sub" id="modalSub"></div>
+    <input type="hidden" id="edit_idx"/>
+    <input type="hidden" id="edit_producto_id"/>
+
+    <!-- Galería de fotos (planes pagados) -->
+    <div id="fotosSection" style="display:none">
+      <label style="margin-bottom:8px">Fotos del Producto <span style="color:var(--muted);font-weight:400;text-transform:none">(máx 3)</span></label>
+      <div class="fotos-galeria" id="fotosGaleria"></div>
+    </div>
+
+    <!-- Aviso para plan gratuito -->
+    <div id="fotosUpgradeAviso" style="display:none;background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(99,102,241,0.04));border:1px solid #3b82f6;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:28px">📸</span>
+        <div style="flex:1">
+          <strong style="display:block;margin-bottom:2px;color:var(--text)">Las fotos de productos están en planes pagados</strong>
+          <span style="font-size:12px;color:var(--muted)">Productos con foto reciben hasta 3x más clics. Disponible desde plan Básico.</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="app.cerrarModal('editModal'); app.mostrar('membresia')">Ver planes</button>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="fg"><label>Nombre *</label><input id="edit_nombre" placeholder="Ej: Arroz Grado 1"/></div>
+      <div class="fg"><label>Categoría</label><select id="edit_cat"></select></div>
+    </div>
+    <div class="form-grid-3">
+      <div class="fg"><label>Precio ($) *</label><input type="number" id="edit_precio" placeholder="0"/></div>
+      <div class="fg"><label>Marca</label><input id="edit_marca" placeholder="Ej: Tucapel"/></div>
+      <div class="fg"><label>Peso / Cantidad</label><input id="edit_peso" placeholder="Ej: 1 kg"/></div>
+    </div>
+    <div style="margin-bottom:20px"><label>Descripción</label><textarea id="edit_desc" placeholder="Descripción opcional..."></textarea></div>
+    <div style="display:flex;gap:12px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="app.cerrarModal('editModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="productos.guardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NUEVO LOCAL -->
+<div class="modal-overlay" id="nuevoLocalModal">
+  <div class="modal">
+    <h3>Agregar Nuevo Local</h3>
+    <div class="modal-sub">Este local quedará asociado a tu cuenta y empezará con plan Gratuito.</div>
+    <div class="form-grid">
+      <div class="fg"><label>Nombre *</label><input id="nl_nombre" placeholder="Ej: Sucursal Norte"/></div>
+      <div class="fg"><label>Categoría *</label>
+        <select id="nl_cat" onchange="nlOnCatChange()">
+<option value="">Seleccionar tipo de comercio…</option>
+            <optgroup label="📦 Alimentos y abarrotes">
+              <option value="Almacén" data-tipo="productos">Almacén</option>
+              <option value="Minimarket" data-tipo="productos">Minimarket</option>
+              <option value="Supermercado" data-tipo="productos">Supermercado</option>
+              <option value="Mayorista / Distribuidora" data-tipo="productos">Mayorista / Distribuidora</option>
+              <option value="Verdulería / Frutería" data-tipo="productos">Verdulería / Frutería</option>
+              <option value="Carnicería" data-tipo="productos">Carnicería</option>
+              <option value="Pollería" data-tipo="productos">Pollería</option>
+              <option value="Pescadería" data-tipo="productos">Pescadería</option>
+              <option value="Panadería / Amasandería" data-tipo="productos" data-hibrido="gastronomia">Panadería / Amasandería</option>
+              <option value="Fiambrería" data-tipo="productos">Fiambrería</option>
+              <option value="Botillería" data-tipo="productos">Botillería</option>
+              <option value="Vinería" data-tipo="productos">Vinería</option>
+              <option value="Confitería / Dulcería" data-tipo="productos">Confitería / Dulcería</option>
+              <option value="Tienda naturista / A granel" data-tipo="productos">Tienda naturista / A granel</option>
+              <option value="Emporio / Gourmet" data-tipo="productos">Emporio / Gourmet</option>
+            </optgroup>
+            <optgroup label="📦 Salud y cuidado">
+              <option value="Farmacia" data-tipo="productos" data-hibrido="servicios">Farmacia</option>
+              <option value="Farmacia natural / Herboristería" data-tipo="productos">Farmacia natural / Herboristería</option>
+              <option value="Perfumería / Cosmética" data-tipo="productos">Perfumería / Cosmética</option>
+              <option value="Óptica" data-tipo="productos" data-hibrido="servicios">Óptica</option>
+              <option value="Ortopedia / Insumos médicos" data-tipo="productos">Ortopedia / Insumos médicos</option>
+              <option value="Pañalera / Tienda bebé" data-tipo="productos">Pañalera / Tienda bebé</option>
+            </optgroup>
+            <optgroup label="📦 Hogar y construcción">
+              <option value="Ferretería" data-tipo="productos" data-hibrido="servicios">Ferretería</option>
+              <option value="Pinturería" data-tipo="productos">Pinturería</option>
+              <option value="Barraca / Materiales" data-tipo="productos">Barraca / Materiales</option>
+              <option value="Bazar" data-tipo="productos">Bazar</option>
+              <option value="Menaje / Cocina" data-tipo="productos">Menaje / Cocina</option>
+              <option value="Mueblería / Decoración" data-tipo="productos">Mueblería / Decoración</option>
+              <option value="Vivero / Plantas" data-tipo="productos">Vivero / Plantas</option>
+              <option value="Floristería" data-tipo="productos" data-hibrido="servicios">Floristería</option>
+            </optgroup>
+            <optgroup label="📦 Moda y estilo">
+              <option value="Ropa / Vestuario" data-tipo="productos" data-hibrido="servicios">Ropa / Vestuario</option>
+              <option value="Zapatería / Calzado" data-tipo="productos">Zapatería / Calzado</option>
+              <option value="Tienda de telas / Mercería" data-tipo="productos">Tienda de telas / Mercería</option>
+              <option value="Joyería" data-tipo="productos">Joyería</option>
+              <option value="Relojería" data-tipo="productos" data-hibrido="servicios">Relojería</option>
+              <option value="Accesorios / Marroquinería" data-tipo="productos">Accesorios / Marroquinería</option>
+              <option value="Tienda deportiva" data-tipo="productos">Tienda deportiva</option>
+            </optgroup>
+            <optgroup label="📦 Tecnología">
+              <option value="Electrónica" data-tipo="productos" data-hibrido="servicios">Electrónica</option>
+              <option value="Telefonía / Celulares" data-tipo="productos" data-hibrido="servicios">Telefonía / Celulares</option>
+              <option value="Computación" data-tipo="productos" data-hibrido="servicios">Computación</option>
+              <option value="Videojuegos" data-tipo="productos">Videojuegos</option>
+            </optgroup>
+            <optgroup label="📦 Mascotas">
+              <option value="Pet shop / Tienda mascotas" data-tipo="productos" data-hibrido="servicios">Pet shop / Tienda mascotas</option>
+            </optgroup>
+            <optgroup label="📦 Otros">
+              <option value="Librería / Papelería" data-tipo="productos">Librería / Papelería</option>
+              <option value="Libros / Segunda mano" data-tipo="productos">Libros / Segunda mano</option>
+              <option value="Juguetería" data-tipo="productos">Juguetería</option>
+              <option value="Regalos / Cotillón" data-tipo="productos">Regalos / Cotillón</option>
+              <option value="Cigarrería / Vapeo" data-tipo="productos">Cigarrería / Vapeo</option>
+              <option value="Bicicletería" data-tipo="productos" data-hibrido="servicios">Bicicletería</option>
+              <option value="Compraventa / Usados" data-tipo="productos">Compraventa / Usados</option>
+              <option value="Kiosco" data-tipo="productos">Kiosco</option>
+              <option value="Otros Productos →" data-tipo="productos">Otros Productos →</option>
+            </optgroup>
+            <optgroup label="🤲 Belleza y cuidado personal">
+              <option value="Peluquería" data-tipo="servicios" data-hibrido="productos">Peluquería</option>
+              <option value="Barbería" data-tipo="servicios" data-hibrido="productos">Barbería</option>
+              <option value="Manicure / Pedicure" data-tipo="servicios">Manicure / Pedicure</option>
+              <option value="Spa / Estética" data-tipo="servicios" data-hibrido="productos">Spa / Estética</option>
+              <option value="Depilación" data-tipo="servicios">Depilación</option>
+              <option value="Tatuajes / Piercings" data-tipo="servicios">Tatuajes / Piercings</option>
+              <option value="Masajes / Quiromasaje" data-tipo="servicios">Masajes / Quiromasaje</option>
+            </optgroup>
+            <optgroup label="🤲 Salud profesional">
+              <option value="Consulta Médica" data-tipo="servicios">Consulta Médica</option>
+              <option value="Dentista / Odontología" data-tipo="servicios">Dentista / Odontología</option>
+              <option value="Oftalmólogo" data-tipo="servicios">Oftalmólogo</option>
+              <option value="Psicólogo" data-tipo="servicios">Psicólogo</option>
+              <option value="Kinesiólogo / Fisioterapia" data-tipo="servicios">Kinesiólogo / Fisioterapia</option>
+              <option value="Nutricionista" data-tipo="servicios">Nutricionista</option>
+              <option value="Matrona" data-tipo="servicios">Matrona</option>
+              <option value="Podología" data-tipo="servicios">Podología</option>
+              <option value="Centro médico / Policlínico" data-tipo="servicios">Centro médico / Policlínico</option>
+            </optgroup>
+            <optgroup label="🤲 Técnicos del hogar">
+              <option value="Gasfíter" data-tipo="servicios">Gasfíter</option>
+              <option value="Electricista" data-tipo="servicios">Electricista</option>
+              <option value="Cerrajería" data-tipo="servicios" data-hibrido="productos">Cerrajería</option>
+              <option value="Maestro / Albañil" data-tipo="servicios">Maestro / Albañil</option>
+              <option value="Vidriería / Aluminios" data-tipo="servicios">Vidriería / Aluminios</option>
+              <option value="Climatización / Refrigeración" data-tipo="servicios">Climatización / Refrigeración</option>
+              <option value="Fumigación / Control de plagas" data-tipo="servicios">Fumigación / Control de plagas</option>
+              <option value="Jardinería / Paisajismo" data-tipo="servicios">Jardinería / Paisajismo</option>
+              <option value="Aseo / Limpieza" data-tipo="servicios">Aseo / Limpieza</option>
+            </optgroup>
+            <optgroup label="🤲 Reparaciones">
+              <option value="Taller Mecánico" data-tipo="servicios" data-hibrido="productos">Taller Mecánico</option>
+              <option value="Taller de motos" data-tipo="servicios">Taller de motos</option>
+              <option value="Vulcanización / Neumáticos" data-tipo="servicios">Vulcanización / Neumáticos</option>
+              <option value="Lavado de autos" data-tipo="servicios">Lavado de autos</option>
+              <option value="Reparación Celulares" data-tipo="servicios" data-hibrido="productos">Reparación Celulares</option>
+              <option value="Reparación Computadores" data-tipo="servicios" data-hibrido="productos">Reparación Computadores</option>
+              <option value="Reparación electrodomésticos" data-tipo="servicios">Reparación electrodomésticos</option>
+              <option value="Zapatero / Compostura" data-tipo="servicios">Zapatero / Compostura</option>
+              <option value="Tapicería" data-tipo="servicios">Tapicería</option>
+              <option value="Relojería (reparación)" data-tipo="servicios" data-hibrido="productos">Relojería (reparación)</option>
+            </optgroup>
+            <optgroup label="🤲 Vestuario y textil">
+              <option value="Sastre / Costurera / Modista" data-tipo="servicios">Sastre / Costurera / Modista</option>
+              <option value="Arreglos de ropa" data-tipo="servicios">Arreglos de ropa</option>
+              <option value="Bordados / Estampados" data-tipo="servicios">Bordados / Estampados</option>
+              <option value="Lavandería / Tintorería" data-tipo="servicios">Lavandería / Tintorería</option>
+            </optgroup>
+            <optgroup label="🤲 Mascotas">
+              <option value="Veterinaria" data-tipo="servicios" data-hibrido="productos">Veterinaria</option>
+              <option value="Peluquería canina" data-tipo="servicios">Peluquería canina</option>
+              <option value="Paseador de mascotas" data-tipo="servicios">Paseador de mascotas</option>
+              <option value="Guardería / Hotel mascotas" data-tipo="servicios">Guardería / Hotel mascotas</option>
+            </optgroup>
+            <optgroup label="🤲 Educación">
+              <option value="Academia / Clases" data-tipo="servicios">Academia / Clases</option>
+              <option value="Preuniversitario" data-tipo="servicios">Preuniversitario</option>
+              <option value="Clases de música" data-tipo="servicios">Clases de música</option>
+              <option value="Clases de idiomas" data-tipo="servicios">Clases de idiomas</option>
+              <option value="Autoescuela" data-tipo="servicios">Autoescuela</option>
+              <option value="Jardín infantil / Sala cuna" data-tipo="servicios">Jardín infantil / Sala cuna</option>
+            </optgroup>
+            <optgroup label="🤲 Bienestar y deporte">
+              <option value="Gimnasio / Fitness" data-tipo="servicios">Gimnasio / Fitness</option>
+              <option value="Yoga / Pilates" data-tipo="servicios">Yoga / Pilates</option>
+              <option value="Artes marciales" data-tipo="servicios">Artes marciales</option>
+              <option value="Danza / Baile" data-tipo="servicios">Danza / Baile</option>
+            </optgroup>
+            <optgroup label="🤲 Profesionales">
+              <option value="Contador / Asesoría contable" data-tipo="servicios">Contador / Asesoría contable</option>
+              <option value="Abogado / Notaría" data-tipo="servicios">Abogado / Notaría</option>
+              <option value="Inmobiliaria / Corretaje" data-tipo="servicios">Inmobiliaria / Corretaje</option>
+              <option value="Fotografía / Estudio" data-tipo="servicios">Fotografía / Estudio</option>
+              <option value="Fotocopias / Imprenta" data-tipo="servicios">Fotocopias / Imprenta</option>
+              <option value="Diseño gráfico / Publicidad" data-tipo="servicios">Diseño gráfico / Publicidad</option>
+            </optgroup>
+            <optgroup label="🤲 Pagos y logística">
+              <option value="Caja Vecina" data-tipo="servicios">Caja Vecina</option>
+              <option value="Pago de cuentas" data-tipo="servicios">Pago de cuentas</option>
+              <option value="Recargas" data-tipo="servicios">Recargas</option>
+              <option value="Encomiendas / PUDO" data-tipo="servicios">Encomiendas / PUDO</option>
+              <option value="Fletes / Mudanzas" data-tipo="servicios">Fletes / Mudanzas</option>
+              <option value="Estacionamiento" data-tipo="servicios">Estacionamiento</option>
+            </optgroup>
+            <optgroup label="🤲 Otros servicios">
+              <option value="Otros Servicios →" data-tipo="servicios">Otros Servicios →</option>
+            </optgroup>
+            <optgroup label="🍴 Comida establecida">
+              <option value="Restaurante" data-tipo="gastronomia">Restaurante</option>
+              <option value="Fonda / Picada" data-tipo="gastronomia">Fonda / Picada</option>
+              <option value="Cocinería / Comida casera" data-tipo="gastronomia">Cocinería / Comida casera</option>
+              <option value="Rotisería" data-tipo="gastronomia">Rotisería</option>
+              <option value="Comida por kilo / Bufé" data-tipo="gastronomia">Comida por kilo / Bufé</option>
+            </optgroup>
+            <optgroup label="🍴 Comida rápida">
+              <option value="Hamburguesería" data-tipo="gastronomia">Hamburguesería</option>
+              <option value="Pizzería" data-tipo="gastronomia">Pizzería</option>
+              <option value="Sándwichería / Completos" data-tipo="gastronomia">Sándwichería / Completos</option>
+              <option value="Empanadas" data-tipo="gastronomia">Empanadas</option>
+              <option value="Pollos fritos / Asados al paso" data-tipo="gastronomia">Pollos fritos / Asados al paso</option>
+              <option value="Sushi / Japonés" data-tipo="gastronomia">Sushi / Japonés</option>
+              <option value="Comida China" data-tipo="gastronomia">Comida China</option>
+              <option value="Comida Peruana" data-tipo="gastronomia">Comida Peruana</option>
+              <option value="Comida mexicana / Taquería" data-tipo="gastronomia">Comida mexicana / Taquería</option>
+              <option value="Comida árabe / Shawarma" data-tipo="gastronomia">Comida árabe / Shawarma</option>
+              <option value="Comida venezolana / Arepas" data-tipo="gastronomia">Comida venezolana / Arepas</option>
+              <option value="Pastas / Italiano" data-tipo="gastronomia">Pastas / Italiano</option>
+            </optgroup>
+            <optgroup label="🍴 Especialidades">
+              <option value="Parrilla / Asados" data-tipo="gastronomia">Parrilla / Asados</option>
+              <option value="Mariscos / Cevichería" data-tipo="gastronomia">Mariscos / Cevichería</option>
+              <option value="Vegetariano / Vegano" data-tipo="gastronomia">Vegetariano / Vegano</option>
+            </optgroup>
+            <optgroup label="🍴 Cafetería y dulces">
+              <option value="Café / Cafetería" data-tipo="gastronomia" data-hibrido="productos">Café / Cafetería</option>
+              <option value="Pastelería / Repostería" data-tipo="gastronomia" data-hibrido="productos">Pastelería / Repostería</option>
+              <option value="Heladería" data-tipo="gastronomia">Heladería</option>
+              <option value="Jugos / Smoothies" data-tipo="gastronomia">Jugos / Smoothies</option>
+              <option value="Crepería / Waffles" data-tipo="gastronomia">Crepería / Waffles</option>
+            </optgroup>
+            <optgroup label="🍴 Bebidas y social">
+              <option value="Bar / Cantina" data-tipo="gastronomia">Bar / Cantina</option>
+              <option value="Pub / Cervecería" data-tipo="gastronomia">Pub / Cervecería</option>
+              <option value="Schopería" data-tipo="gastronomia">Schopería</option>
+              <option value="Fuente de Soda" data-tipo="gastronomia">Fuente de Soda</option>
+              <option value="Coctelería" data-tipo="gastronomia">Coctelería</option>
+            </optgroup>
+            <optgroup label="🍴 Otros gastronomía">
+              <option value="Desayunos / Brunch" data-tipo="gastronomia">Desayunos / Brunch</option>
+              <option value="Food truck" data-tipo="gastronomia">Food truck</option>
+              <option value="Banquetería / Eventos" data-tipo="gastronomia" data-hibrido="servicios">Banquetería / Eventos</option>
+              <option value="Otros Gastronomía →" data-tipo="gastronomia">Otros Gastronomía →</option>
+            </optgroup>
+          </select>
+        <!-- Sugerencia híbrido (nuevo local) -->
+        <div id="nlHibridoSugg" style="display:none;background:rgba(184,163,255,.1);border:1px solid rgba(184,163,255,.3);border-radius:8px;padding:10px 12px;margin-top:6px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:5px">💡 <span id="nlHibridoMsg"></span></div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button type="button" class="btn btn-primary btn-sm" onclick="nlActivarHibrido()">Sí, activar</button>
+            <button type="button" class="btn btn-sm" style="background:var(--border)" onclick="document.getElementById('nlHibridoSugg').style.display='none';document.getElementById('nl_hibrido').value=''">No por ahora</button>
+          </div>
+        </div>
+        <div id="nlHibridoRubroWrap" style="display:none;margin-top:8px">
+          <label style="font-size:12px">Rubro secundario</label>
+          <select id="nl_rubroSecundario">
+            <option value="productos">📦 Productos</option>
+            <option value="servicios">🤲 Servicios</option>
+            <option value="gastronomia">🍴 Gastronomía</option>
+          </select>
+        </div>
+        <input type="hidden" id="nl_hibrido" value=""/>
+      </div>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="fg"><label>Dirección</label><input id="nl_direccion" placeholder="Ej: Av. Principal 456"/></div>
+      <div class="fg"><label>Comuna *</label><input id="nl_comuna" placeholder="Ej: Santiago"/></div>
+    </div>
+    <div style="margin-bottom:20px"><label>Horario</label><input id="nl_horario" placeholder="Ej: 09:00 - 20:00"/></div>
+    <div style="display:flex;gap:12px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="app.cerrarModal('nuevoLocalModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="locales.crear()">Crear Local</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFLICTO DE NOMBRE -->
+<!-- MODAL: CÓDIGO QR DEL LOCAL -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal" style="max-width:480px;text-align:center">
+    <h3>Código QR del Local</h3>
+    <div class="modal-sub" id="qrSubtitle">Imprime este código y colócalo visible en tu local.</div>
+
+    <!-- Tarjeta imprimible -->
+    <div id="qrPrintCard" style="background:#fff;border-radius:16px;padding:0;margin:16px auto;max-width:340px;border:2px solid #FF8A00;overflow:hidden">
+      <div style="background:#FF8A00;padding:12px 16px;text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#fff;letter-spacing:-0.01em">📍 MercaDate</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.92);font-weight:600;margin-top:2px">El mejor precio a la vuelta de la esquina</div>
+      </div>
+      <div style="padding:18px 24px 24px">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:#0f1218;margin-bottom:2px" id="qrLocalNombre">—</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px" id="qrLocalDir">—</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:14px" id="qrLocalRut"></div>
+        <div id="qrCanvas" style="display:flex;justify-content:center;margin:0 auto"></div>
+        <div style="font-weight:700;font-size:13px;color:#FF8A00;margin-top:14px">📲 Escanea para registrar tu visita</div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:4px" id="qrCodigo">—</div>
+        <div style="border-top:1px solid #f1f1f1;margin-top:14px;padding-top:10px">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#FF8A00">📍 MercaDate</div>
+          <div style="font-size:9px;color:#cbd5e1;margin-top:2px">Descarga la app y descubre los mejores precios</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="locales.descargarQrPNG()">⬇️ Descargar PNG</button>
+      <button class="btn btn-ghost btn-sm" onclick="locales.descargarQrPDF()">📄 Descargar PDF</button>
+      <button class="btn btn-ghost btn-sm" onclick="app.cerrarModal('qrModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="conflictoModal">
+  <div class="modal">
+    <h3>Nombre ya existe</h3>
+    <div class="modal-sub" id="conflictoTxt"></div>
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:14px;margin-bottom:18px;font-size:13px;color:#92400e">
+      Si eres el dueño del comercio existente, debes iniciar sesión con esa cuenta.<br>
+      Si es un comercio diferente que casualmente tiene el mismo nombre, puedes crearlo igualmente. Notificaremos al equipo de MercaDate para revisión.
+    </div>
+    <div style="display:flex;gap:12px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="app.cerrarModal('conflictoModal')">Cancelar</button>
+      <button class="btn btn-warn" onclick="locales.confirmarConflicto()">Crear de todos modos</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PAGO -->
+<div class="modal-overlay" id="pagoModal">
+  <div class="modal">
+    <h3 id="pagoTitle">Confirmar Pago</h3>
+    <div class="modal-sub" id="pagoSub"></div>
+    <div id="pagoResumen" class="prorratea-box" style="margin-bottom:20px"></div>
+    <h4 style="font-size:14px;font-weight:700;margin-bottom:8px">Selecciona método de pago:</h4>
+    <div class="pago-metodos">
+      <div class="pago-btn paypal" onclick="pagos.iniciar('paypal')">
+        <div class="pago-btn-logo" style="color:#003087">PayPal</div>
+        <div style="font-size:12px;color:var(--muted)">Tarjeta o cuenta PayPal</div>
+      </div>
+      <div class="pago-btn mercadopago" onclick="pagos.iniciar('mercadopago')">
+        <div class="pago-btn-logo" style="color:#009ee3">Mercado Pago</div>
+        <div style="font-size:12px;color:var(--muted)">Tarjeta, transferencia, etc.</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">
+      🔒 Pago seguro · El plan se activa al confirmar el pago
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-ghost btn-sm" onclick="app.cerrarModal('pagoModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Agregar Nuevo (Uno a uno + Carga Masiva con tabs) ═══ -->
+<div class="modal-overlay" id="agregarNuevoModal">
+  <div class="modal" style="max-width:680px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3>Agregar Productos / Servicios</h3>
+      <button class="btn btn-ghost btn-sm" onclick="app.cerrarModal('agregarNuevoModal')">✕</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="agregar-tabs">
+      <button class="agregar-tab active" data-tab="uno" onclick="productos.cambiarTabAgregar('uno')">📝 Uno a uno</button>
+      <button class="agregar-tab" data-tab="masivo" onclick="productos.cambiarTabAgregar('masivo')">📥 Carga Masiva</button>
+    </div>
+
+    <!-- Tab UNO A UNO -->
+    <div class="agregar-panel" data-panel="uno">
+      <div class="form-grid">
+        <div class="fg"><label>Nombre *</label><input id="n_nombre" placeholder="Ej: Pan amasado"/></div>
+        <div class="fg"><label>Categoría</label><select id="n_categoria"></select></div>
+      </div>
+      <div class="form-grid-3">
+        <div class="fg"><label>Precio ($) *</label><input id="n_precio" type="number" min="0" placeholder="0"/></div>
+        <div class="fg"><label>Marca</label><input id="n_marca" placeholder="Opcional"/></div>
+        <div class="fg"><label>Peso / Cantidad</label><input id="n_peso" placeholder="Ej: 1kg, 500g"/></div>
+      </div>
+      <div style="margin-bottom:14px"><label>Descripción</label><textarea id="n_desc" rows="2" placeholder="Detalles opcionales"></textarea></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost" onclick="app.cerrarModal('agregarNuevoModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="productos.guardarNuevo()">➕ Agregar producto</button>
+      </div>
+    </div>
+
+    <!-- Tab MASIVO -->
+    <div class="agregar-panel" data-panel="masivo" style="display:none">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px">
+        <h4 style="font-size:14px;margin-bottom:8px">📋 Paso 1: Descarga la plantilla oficial</h4>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">
+          Archivo CSV con el formato correcto para tu rubro. Incluye un ejemplo y las categorías válidas como referencia.
+        </p>
+        <button class="btn btn-ghost btn-sm" onclick="productos.descargarTemplate()">
+          ⬇️ Descargar plantilla para mi rubro
+        </button>
+      </div>
+
+      <h4 style="font-size:14px;margin-bottom:8px">📤 Paso 2: Sube el archivo completado</h4>
+      <div class="upload-zone" id="dropCSV">
+        <input type="file" id="fileCSV" accept=".csv"/>
+        <div class="upload-icon">📊</div>
+        <div class="upload-text"><strong>Sube tu archivo CSV</strong></div>
+        <div class="upload-formats">Formato: .csv (usa la plantilla del Paso 1)</div>
+      </div>
+      <div id="csvStatus" style="margin-top:14px;font-size:13px;color:var(--muted)"></div>
+
+      <div id="csvPreviewCard" style="display:none;margin-top:14px">
+        <h4 id="csvPreviewTitle" style="font-size:14px;margin-bottom:10px">Vista Previa</h4>
+        <div id="csvPreviewList" style="margin-bottom:14px;max-height:300px;overflow-y:auto"></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-ghost" onclick="productos.limpiarCarga()">Cancelar</button>
+          <button class="btn btn-primary" onclick="productos.importarMasivo()">Confirmar Carga</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Ayuda / Soporte ═══ -->
+<div class="modal-overlay" id="ayudaModal">
+  <div class="modal" style="max-width:520px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3>Centro de Ayuda</h3>
+      <button class="btn btn-ghost btn-sm" onclick="app.cerrarModal('ayudaModal')">✕</button>
+    </div>
+
+    <div id="ayudaOpciones">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">¿En qué podemos ayudarte?</p>
+      <div style="display:grid;gap:10px">
+        <button class="ayuda-opcion" onclick="cuenta.abrirFormularioAyuda('comentario')">
+          <div style="font-size:24px">💬</div>
+          <div style="flex:1;text-align:left">
+            <strong>Enviar comentarios</strong>
+            <p style="font-size:11px;color:var(--muted);margin-top:2px">Sugerencias, ideas, comentarios generales</p>
+          </div>
+          <span style="color:var(--muted)">→</span>
+        </button>
+        <button class="ayuda-opcion" onclick="cuenta.abrirFormularioAyuda('soporte_tecnico')">
+          <div style="font-size:24px">🛠️</div>
+          <div style="flex:1;text-align:left">
+            <strong>Soporte Técnico</strong>
+            <p style="font-size:11px;color:var(--muted);margin-top:2px">Problemas, errores, ayuda urgente</p>
+          </div>
+          <span style="color:var(--muted)">→</span>
+        </button>
+        <button class="ayuda-opcion" onclick="cuenta.cargarHistorialSoporte()">
+          <div style="font-size:24px">📋</div>
+          <div style="flex:1;text-align:left">
+            <strong>Mi historial</strong>
+            <p style="font-size:11px;color:var(--muted);margin-top:2px">Ver mis tickets y comentarios anteriores</p>
+          </div>
+          <span style="color:var(--muted)">→</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="ayudaFormulario" style="display:none">
+      <button class="btn btn-ghost btn-sm" onclick="cuenta.volverOpcionesAyuda()" style="margin-bottom:10px">← Volver</button>
+      <h4 id="ayudaTipoTitulo" style="margin-bottom:10px">—</h4>
+      <label>Asunto</label>
+      <input id="ayudaAsunto" placeholder="Resumen breve" style="width:100%;margin-bottom:10px"/>
+      <label>Mensaje *</label>
+      <textarea id="ayudaMensaje" rows="6" style="width:100%" placeholder="Describe con detalle..."></textarea>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost" onclick="app.cerrarModal('ayudaModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="cuenta.enviarAyuda()">Enviar</button>
+      </div>
+    </div>
+
+    <div id="ayudaHistorial" style="display:none">
+      <button class="btn btn-ghost btn-sm" onclick="cuenta.volverOpcionesAyuda()" style="margin-bottom:10px">← Volver</button>
+      <h4 style="margin-bottom:10px">📋 Mi historial</h4>
+      <div id="ayudaHistorialList" style="max-height:380px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Editar Local ═══ -->
+<div class="modal-overlay" id="editarLocalModal">
+  <div class="modal" style="max-width:600px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3>Editar Local</h3>
+      <button class="btn btn-ghost btn-sm" onclick="app.cerrarModal('editarLocalModal')">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="fg"><label>Nombre del local *</label><input id="el_nombre"/></div>
+      <div class="fg"><label>Categoría</label><select id="el_categoria"></select></div>
+      <div class="fg"><label>Dirección</label><input id="el_direccion"/></div>
+      <div class="fg"><label>Comuna *</label><input id="el_comuna"/></div>
+      <div class="fg"><label>Región</label><input id="el_region"/></div>
+      <div class="fg"><label>Teléfono</label><input id="el_telefono"/></div>
+      <div class="fg"><label>Instagram (opcional)</label><input id="el_instagram" placeholder="@tunegocio o instagram.com/tunegocio"/></div>
+    </div>
+
+    <!-- Horarios de atención por día -->
+    <div style="margin-top:18px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+      <label style="display:block;margin-bottom:10px">🕐 Días y horarios de atención</label>
+
+      <!-- Atajo: aplicar mismo horario -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px;background:var(--surface);border-radius:6px;margin-bottom:12px;font-size:12px">
+        <span style="color:var(--muted)">Aplicar a abiertos:</span>
+        <input type="time" id="el_quick_desde" value="09:00" style="width:90px;padding:4px 6px"/>
+        <span>→</span>
+        <input type="time" id="el_quick_hasta" value="19:00" style="width:90px;padding:4px 6px"/>
+        <button class="btn btn-ghost btn-sm" style="padding:4px 10px" onclick="locales.aplicarHorarioATodos()">📋 Aplicar</button>
+      </div>
+
+      <!-- Lista de días -->
+      <div id="el_dias_grid" class="dias-grid"></div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">💡 Si algún día tiene horario distinto, ajústalo directamente en esa fila.</p>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost" onclick="app.cerrarModal('editarLocalModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="locales.guardarEdicion()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══ MODAL: Cambiar Estado del Local ═══ -->
+<div class="modal-overlay" id="estadoLocalModal">
+  <div class="modal" style="max-width:440px">
+    <h3 style="margin-bottom:10px">Estado del Local</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Define cómo te ven los clientes. Si está cerrado o pausado, verán un aviso.</p>
+
+    <label>Estado actual</label>
+    <select id="cdEstadoSel" style="width:100%">
+      <option value="abierto">🟢 Abierto — recibiendo clientes</option>
+      <option value="pausado">🟡 Pausado — visible pero sin atender</option>
+      <option value="cerrado">🔴 Cerrado — temporalmente cerrado</option>
+    </select>
+
+    <label style="margin-top:14px">Mensaje opcional para los clientes</label>
+    <textarea id="cdEstadoMsg" rows="2" style="width:100%" placeholder="Ej: Cerrado por vacaciones hasta el 20 de marzo"></textarea>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-ghost" onclick="app.cerrarModal('estadoLocalModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="cdashboard.guardarEstado()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Vista Previa Pública ═══ -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal" style="max-width:640px;padding:0;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <strong>👁️ Vista Previa — Cómo te ven los clientes</strong>
+        <p style="font-size:11px;color:var(--muted);margin-top:2px">Esta es la vista pública de tu local</p>
+      </div>
+      <button id="previewCopyLink" class="btn btn-ghost btn-sm" style="margin-left:auto">📋 Copiar link</button>
+      <button class="btn btn-ghost btn-sm" onclick="app.cerrarModal('previewModal')">✕</button>
+    </div>
+    <div id="previewContent" style="max-height:70vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- ════════════ SCRIPTS ════════════ -->
+<script src="vendor/js/qrcode.min.js?v=20260628-vendor"></script>
+<script src="vendor/js/jspdf.umd.min.js?v=20260628-vendor"></script>
+<script src="js/utils.js?v=20260619-security"></script> <!-- Utilidades compartidas -->
+<script src="js/flags.js?v=20260721-flags3"></script>
+<script src="comercio/js/api.js?v=20260612-bearer"></script>
+<script src="js/onboarding.js?v=20260628-onb4"></script>
+<script src="comercio/js/app.js?v=20260928-plan"></script>
+<script src="comercio/js/auth.js?v=20260612-tyc"></script>
+<script src="comercio/js/locales.js?v=20260610-fix"></script>
+<script src="comercio/js/productos.js?v=20260928-stock2"></script>
+<script src="comercio/js/membresia.js?v=20260928-plan"></script>
+<script src="comercio/js/pagos.js?v=20260610-fix"></script>
+<script src="comercio/js/cuenta.js?v=20260610-fix"></script>
+<script src="comercio/js/mensajes.js?v=20260610-fix"></script>
+<script src="comercio/js/dashboard.js?v=20260628-fix2"></script>
+<script src="comercio/js/delivery.js?v=20260721-dlv1"></script>
+<script src="vendor/js/html5-qrcode.min.js?v=20260628-vendor"></script>
+<script src="comercio-v6/js/escaner-stock.js?v=20260928-stock2"></script>
+<script>
+  // V6: al entrar a un local se carga la sección activa (Dashboard). En el
+  // panel original seleccionarLocal() muestra la app pero no llama a
+  // app.mostrar(), y el dashboard queda vacío hasta tocar "Dashboard".
+  // Se escucha #appScreen (no auth.seleccionarLocal): el login con un solo
+  // local llama a la función interna de auth.js, que no pasa por el objeto.
+  (function () {
+    var pantalla = document.getElementById('appScreen');
+    if (!pantalla || !window.app) return;
+    var ultimoLocal = null;
+    function alMostrar() {
+      var local = app.STATE && app.STATE.activeLocal;
+      if (pantalla.style.display === 'none' || !local || local.id === ultimoLocal) return;
+      ultimoLocal = local.id;
+      var activa = document.querySelector('.section.active');
+      try { app.mostrar(activa ? activa.id : 'cdashboard'); } catch (e) {}
+    }
+    try { new MutationObserver(alMostrar).observe(pantalla, { attributes: true, attributeFilter: ['style'] }); } catch (e) {}
+    alMostrar();
+  })();
+
+  // ── Barra inferior móvil (estilo MKT) ──
+  function cv6Mas(abrir) {
+    var b = document.body;
+    if (abrir === undefined) abrir = !b.classList.contains('cv6-mas-open');
+    b.classList.toggle('cv6-mas-open', abrir);
+    cv6MarcarBnav();
+  }
+  function cv6Ir(sec) { cv6Mas(false); app.mostrar(sec); }
+  function cv6MarcarBnav() {
+    var activa = document.querySelector('.section.active');
+    var id = activa ? activa.id : '';
+    var mas = document.body.classList.contains('cv6-mas-open');
+    var principal = ['cdashboard', 'productos', 'alertas', 'mensajes'].indexOf(id) >= 0;
+    document.querySelectorAll('.cv6-bn').forEach(function (b) {
+      var s = b.dataset.sec;
+      b.classList.toggle('on', s === 'mas' ? (mas || !principal) : (!mas && s === id));
+    });
+  }
+  (function () {
+    // Pestaña activa = sección activa (app.mostrar cambia .section.active)
+    var main = document.querySelector('.main');
+    if (main) try { new MutationObserver(cv6MarcarBnav).observe(main, { attributes: true, subtree: true, attributeFilter: ['class'] }); } catch (e) {}
+    // Globos: espejo de los badges reales del sidebar
+    document.querySelectorAll('.cv6-bn-badge[data-espejo]').forEach(function (g) {
+      var real = document.getElementById(g.dataset.espejo);
+      if (!real) return;
+      function sync() {
+        var v = (real.textContent || '').trim();
+        g.textContent = v;
+        g.hidden = !v || v === '0' || getComputedStyle(real).display === 'none';
+      }
+      try { new MutationObserver(sync).observe(real, { childList: true, characterData: true, subtree: true, attributes: true }); } catch (e) {}
+      sync();
+    });
+    // Mensajes: si flags.js oculta el botón real (flag apagado), se oculta la pestaña
+    document.querySelectorAll('.cv6-bn[data-espejo-nav]').forEach(function (b) {
+      var real = document.getElementById(b.dataset.espejoNav);
+      if (!real) return;
+      function sync() { b.hidden = getComputedStyle(real).display === 'none'; }
+      try { new MutationObserver(sync).observe(real, { attributes: true, attributeFilter: ['style', 'class', 'hidden'] }); } catch (e) {}
+      sync(); setTimeout(sync, 1500);
+    });
+    // Dentro de la hoja "Más": elegir una sección la cierra
+    var side = document.querySelector('.sidebar');
+    if (side) side.addEventListener('click', function (e) {
+      if (e.target.closest('.nav-btn:not(.cv6-tema-btn)')) cv6Mas(false);
+    });
+    cv6MarcarBnav();
+  })();
+
+  // Formal: el JS compartido arma etiquetas con emoji inicial ("📱 Clics…",
+  // "🥉 Bronce"). En V6 se quita solo el emoji del comienzo del texto, sin
+  // tocar el contenido ni los listeners.
+  (function () {
+    var RX = /^\s*(?:[\u{1F100}-\u{1F2FF}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}][\u{FE0F}\u{200D}]?)+\s*/u;
+    var SEL = '.cd-kpi-label, .plan-card-nombre, #mbPlanNombre, #membresia h2, #membresia h3, #membresia h4, #cdashboard h3, #cdashboard h4, .page-header h2';
+    function limpiar(raiz) {
+      (raiz.querySelectorAll ? raiz : document).querySelectorAll(SEL).forEach(function (el) {
+        var n = el.firstChild;
+        if (n && n.nodeType === 3 && RX.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(RX, '');
+      });
+    }
+    var main = document.querySelector('.main');
+    if (main) try { new MutationObserver(function () { limpiar(main); }).observe(main, { childList: true, subtree: true }); } catch (e) {}
+    limpiar(document);
+  })();
+</script>
+<script>
+function sideToggle(id) { document.getElementById(id).classList.toggle('collapsed'); }
+window.addEventListener('load', () => app.init());
+</script>
+
+<script>
+/* ── Flujo híbrido: Registro y Nuevo Local ── */
+(function(){
+  var RUBRO_LABEL = { productos:'📦 Productos', servicios:'🤲 Servicios', gastronomia:'🍴 Gastronomía' };
+
+  function _onCatChange(selId, suggId, msgId, wrapId, hidId, secId){
+    var sel = document.getElementById(selId);
+    var opt = sel && sel.options[sel.selectedIndex];
+    var hibrido = opt ? (opt.getAttribute('data-hibrido')||'') : '';
+    var val     = opt ? opt.value : '';
+    var sugg = document.getElementById(suggId);
+    var msg  = document.getElementById(msgId);
+    var wrap = document.getElementById(wrapId);
+    var hid  = document.getElementById(hidId);
+    var sec  = document.getElementById(secId);
+    if(wrap) wrap.style.display = 'none';
+    if(hid)  hid.value = '';
+    if(hibrido && sugg && msg){
+      msg.textContent = '"'+val+'" suele también publicar en '+(RUBRO_LABEL[hibrido]||hibrido)+'. ¿Activar ese rubro también?';
+      sugg.style.display = 'block';
+      if(sec) sec.value = hibrido;
+    } else if(sugg){ sugg.style.display = 'none'; }
+    // "Otros →" → aviso
+    if(val && val.endsWith(' →')){
+      if(sugg) sugg.style.display = 'none';
+      setTimeout(function(){ alert('Tu tipo quedará como sugerencia. El Admin creará la categoría oficial y migrará tu local automáticamente.'); }, 60);
+    }
+  }
+
+  function _activar(suggId, wrapId, hidId, secId){
+    var sec  = document.getElementById(secId);
+    var hid  = document.getElementById(hidId);
+    var sugg = document.getElementById(suggId);
+    var wrap = document.getElementById(wrapId);
+    if(hid)  hid.value  = sec ? sec.value : 'si';
+    if(wrap) wrap.style.display = 'block';
+    if(sugg) sugg.style.display = 'none';
+  }
+
+  // Registro
+  window.regOnCatChange  = function(){ _onCatChange('regLocalCategoria','regHibridoSugg','regHibridoMsg','regHibridoRubroWrap','reg_hibrido','reg_rubroSecundario'); };
+  window.regActivarHibrido = function(){ _activar('regHibridoSugg','regHibridoRubroWrap','reg_hibrido','reg_rubroSecundario'); };
+
+  // Nuevo Local (modal)
+  window.nlOnCatChange   = function(){ _onCatChange('nl_cat','nlHibridoSugg','nlHibridoMsg','nlHibridoRubroWrap','nl_hibrido','nl_rubroSecundario'); };
+  window.nlActivarHibrido = function(){ _activar('nlHibridoSugg','nlHibridoRubroWrap','nl_hibrido','nl_rubroSecundario'); };
+})();
+</script>
+</body>
+</html>

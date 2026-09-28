@@ -1,0 +1,168 @@
+<!doctype html>
+<!--
+  ═══════════════════════════════════════════════════
+  PLATAFORMA : Compartida — Páginas legales/guía MercaDate
+  ARCHIVO    : acerca.html  (guía rápida de la plataforma · tarjetas por tema)
+  ═══════════════════════════════════════════════════
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Acerca de · Administrador MercaDate</title>
+<link rel="stylesheet" href="vendor/fonts/fonts.css?v=20260628-vendor"/>
+<style>
+  :root{ --bg:#0b0f16; --card:#151c28; --card2:#1b2433; --text:#eaf0f8; --muted:#8b95a7;
+    --accent:#f0b429; --accent2:#ff7a18; --border:#243044;
+    --user:#f0b429; --com:#22c08a; --adm:#8b7bff; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:radial-gradient(130% 70% at 50% -10%, #16203122 0%, #0b0f16 60%), var(--bg);
+    color:var(--text); font-family:'DM Sans',Inter,system-ui,sans-serif; line-height:1.6; }
+  .wrap{ max-width:680px; margin:0 auto; padding:34px 18px 64px; }
+  .head{ text-align:center; margin-bottom:8px; }
+  .logo{ height:64px; width:64px; object-fit:contain; border-radius:16px; margin-bottom:12px; }
+  .brand{ font-family:'Plus Jakarta Sans'; font-weight:800; font-size:30px; letter-spacing:-.02em;
+    background:linear-gradient(120deg,var(--accent2),var(--accent)); -webkit-background-clip:text;
+    background-clip:text; -webkit-text-fill-color:transparent; }
+  .slogan{ font-size:13px; color:var(--muted); margin:5px 0 6px; }
+  .intro{ font-size:14px; color:var(--muted); max-width:46ch; margin:0 auto 26px; text-align:center; }
+
+  .sec-title{ display:flex; align-items:center; gap:10px; margin:26px 4px 12px; }
+  .sec-title .pill{ font-family:'Plus Jakarta Sans'; font-weight:800; font-size:12px; letter-spacing:.06em;
+    text-transform:uppercase; color:#0b0f16; padding:5px 12px; border-radius:999px; }
+  .sec-title small{ color:var(--muted); font-size:12.5px; }
+  .pill.u{ background:linear-gradient(135deg,#ffb02e,var(--user)); }
+  .pill.c{ background:linear-gradient(135deg,#0ea371,var(--com)); }
+  .pill.a{ background:linear-gradient(135deg,#6a55e6,var(--adm)); }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:520px){ .grid{ grid-template-columns:1fr; } }
+  .card{ background:linear-gradient(180deg,var(--card2),var(--card)); border:1px solid var(--border);
+    border-radius:16px; padding:16px; display:flex; gap:13px; align-items:flex-start; }
+  .card .ic{ flex:none; width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
+    background:#0e1622; border:1px solid var(--border); }
+  .card .ic svg{ width:22px; height:22px; }
+  .card h3{ font-family:'Plus Jakarta Sans'; font-size:15px; font-weight:700; margin-bottom:3px; }
+  .card p{ font-size:13px; color:var(--muted); line-height:1.5; }
+  .grp-u .ic svg{ color:var(--user); } .grp-c .ic svg{ color:var(--com); } .grp-a .ic svg{ color:var(--adm); }
+
+  /* tarjeta destacada: puntos / visitas */
+  .hero{ position:relative; overflow:hidden; border:1px solid var(--border); border-radius:20px; margin:14px 0 4px;
+    background:radial-gradient(120% 130% at 100% 0%, color-mix(in srgb,var(--accent) 22%, transparent), transparent 60%), linear-gradient(180deg,var(--card2),var(--card)); padding:20px; }
+  .hero .tag{ font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
+  .hero h2{ font-family:'Plus Jakarta Sans'; font-weight:800; font-size:21px; letter-spacing:-.01em; margin:6px 0 6px; }
+  .hero p{ font-size:13.5px; color:var(--muted); max-width:52ch; }
+  .steps{ display:flex; gap:8px; margin:16px 0 6px; flex-wrap:wrap; }
+  .step{ flex:1 1 150px; background:#0e1622; border:1px solid var(--border); border-radius:12px; padding:12px; }
+  .step b{ display:block; font-size:13px; margin-bottom:2px; }
+  .step span{ font-size:12px; color:var(--muted); }
+  .step .pts{ color:var(--accent); font-weight:700; }
+  .acciones{ display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+  .chip{ font-size:12px; background:#0e1622; border:1px solid var(--border); border-radius:999px; padding:5px 11px; color:var(--muted); }
+  .chip b{ color:var(--accent); }
+  .niveles{ display:flex; flex-direction:column; gap:7px; margin-top:14px; }
+  .nivel{ display:flex; align-items:center; gap:10px; background:#0e1622; border:1px solid var(--border);
+    border-radius:11px; padding:9px 12px; font-size:13px; }
+  .nivel .dot{ width:11px; height:11px; border-radius:999px; flex:none; }
+  .nivel .rg{ margin-left:auto; color:var(--muted); font-size:12px; }
+  .nivel .hab{ color:var(--accent); font-size:12px; font-weight:600; }
+
+  .links{ margin-top:26px; }
+  .links a{ display:block; padding:13px 16px; margin-bottom:10px; background:var(--card);
+    border:1px solid var(--border); border-radius:12px; color:var(--text); text-decoration:none; font-size:14px; font-weight:600; }
+  .links a:hover{ border-color:var(--accent); }
+  .ver{ font-size:11.5px; color:#566174; margin-top:22px; text-align:center; }
+  .volver{ display:inline-block; margin-top:16px; padding:11px 22px;
+    background:linear-gradient(135deg,var(--accent2),var(--accent)); color:#0b0f16; border-radius:11px;
+    font-weight:800; font-size:13px; text-decoration:none; }
+  .center{ text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <img class="logo" src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="MercaDate" onerror="this.style.display='none'">
+    <div class="brand">MercaDate</div>
+    <div class="slogan">El mejor precio, a la vuelta de la esquina</div>
+    <div style="display:inline-block;margin:4px 0 2px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#0b0f16;padding:5px 14px;border-radius:999px;background:linear-gradient(135deg,#6a55e6,#8b7bff)">Administrador</div>
+  </div>
+  <p class="intro">Guía completa de la plataforma: usuario, comercio y administración.</p>
+
+  <!-- DESTACADO: visitas y puntos -->
+  <div class="hero">
+    <div class="tag">⭐ Lo más importante</div>
+    <h2>Registra tus visitas y gana puntos</h2>
+    <p>Cada vez que compras en un comercio local, registra tu visita con la boleta y suma puntos. Subes de nivel y desbloqueas nuevas habilidades dentro de la app.</p>
+    <div class="steps">
+      <div class="step"><b>1 · Visita un local</b><span>Compra en un comercio de tu barrio.</span></div>
+      <div class="step"><b>2 · Registra la boleta</b><span>Toca “Registrar visita” en la app.</span></div>
+      <div class="step"><b>3 · Suma puntos</b><span class="pts">+10 puntos por visita válida</span></div>
+    </div>
+    <div class="acciones">
+      <span class="chip">Visita con boleta <b>+10</b></span>
+      <span class="chip">Reportar precio <b>+5</b></span>
+      <span class="chip">Valorar comercio <b>+5</b></span>
+      <span class="chip">Misión semanal <b>+25</b></span>
+      <span class="chip">Invitar a alguien <b>+40</b></span>
+    </div>
+    <p style="margin-top:10px;font-size:12px">Puedes sumar hasta <b style="color:var(--accent)">50 puntos al día</b>. Cuantos más acumulas, más alto es tu nivel:</p>
+    <div class="niveles">
+      <div class="nivel"><span class="dot" style="background:#22c55e"></span> 🟢 <b>Nivel 1 · Explorador Novato</b><span class="hab">Búsqueda, GPS, QR, Lila básica</span><span class="rg">0–200 pts</span></div>
+      <div class="nivel"><span class="dot" style="background:#eab308"></span> 🟡 <b>Nivel 2 · Rastreador Experto</b><span class="hab">WhatsApp, reportar precios, favoritos, Lila por voz</span><span class="rg">201–800</span></div>
+      <div class="nivel"><span class="dot" style="background:#f97316"></span> 🟠 <b>Nivel 3 · Cazador de Precios</b><span class="hab">Alertas, reseñas, historial, Lila al 100%</span><span class="rg">801+</span></div>
+    </div>
+    <p style="margin-top:10px;font-size:12px">⏱️ <b style="color:var(--accent)">Período libre 48h:</b> los usuarios nuevos acceden a todas las funciones durante 48 horas desde el registro, sin importar su nivel.</p>
+  </div>
+
+  <!-- USUARIO -->
+  <div class="rol-sec" data-rol="usuario">
+  <div class="sec-title"><span class="pill u">Usuario</span><small>Descubre y ahorra en tu barrio</small></div>
+  <div class="grid grp-u">
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div><h3>Comercios cerca</h3><p>Productos, servicios y gastronomía de tu zona, con fotos y precios reales.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h4l3 7 4-16 3 9h4"/></svg></div><div><h3>Combustibles</h3><p>Precios de bencina al día con datos de la CNE y reportes de la comunidad.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.3-9-9a5 5 0 0 1 9-2 5 5 0 0 1 9 2c-2 4.7-9 9-9 9z"/></svg></div><div><h3>Favoritos y alertas</h3><p>Guarda comercios y recibe avisos cuando baja el precio.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-9A8.4 8.4 0 1 1 21 11.5z"/></svg></div><div><h3>Contacto directo</h3><p>Escribe por WhatsApp o visita el Instagram del comercio al toque.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-3-5-8-1-3 0M12 8c3-5 8-1 3 0"/></svg></div><div><h3>Beneficios</h3><p>Descuentos y premios de marcas aliadas. Para mayores de 18 años.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M3 21a9 9 0 0 1 18 0"/></svg></div><div><h3>Tu perfil con avatar</h3><p>Personaliza tu avatar y revisa tu historial de visitas y puntos.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg></div><div><h3>Lila, asistente de voz</h3><p>Asistente que guía al usuario, responde preguntas y busca por voz. Configurable desde el admin.</p></div></div>
+  </div>
+  </div>
+
+  <!-- COMERCIO -->
+  <div class="rol-sec" data-rol="comercio">
+  <div class="sec-title"><span class="pill c">Comercio</span><small>Tu negocio, visible en tu zona</small></div>
+  <div class="grid grp-c">
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-4h15L21 9M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg></div><div><h3>Publica tu catálogo</h3><p>Sube productos, servicios o tu carta con fotos y precios. Importa por CSV.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11" r="3"/><circle cx="12" cy="11" r="8"/><path d="M12 1v3M12 19v3"/></svg></div><div><h3>Visibilidad local</h3><p>Apareces cuando alguien cerca busca justo lo que ofreces.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></div><div><h3>Estadísticas</h3><p>Mira qué buscan, cuándo y cuántos te contactan por WhatsApp.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="6" height="9" rx="1"/></svg></div><div><h3>Varios locales</h3><p>Administra sucursales, horarios y estados desde un panel simple.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h4v-6H4zM10 19h4V8h-4zM16 19h4V4h-4z"/></svg></div><div><h3>Planes flexibles</h3><p>Gratis permanente y planes con más cupo. Si pagas, mantienes tu precio.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11l2 2 4-4M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 20a6 6 0 0 1 12 0"/></svg></div><div><h3>Convenios y marcas</h3><p>Suma tu negocio a beneficios para clientes (programa en expansión).</p></div></div>
+  </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="rol-sec" data-rol="admin">
+  <div class="sec-title"><span class="pill a">Admin</span><small>Gestión interna de la plataforma</small></div>
+  <div class="grid grp-a">
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/></svg></div><div><h3>Tablero central</h3><p>Comercios, usuarios y contenido en un solo lugar.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0M16 8a3 3 0 0 1 0 6M17 20a6 6 0 0 0-3-5"/></svg></div><div><h3>Usuarios y comercios</h3><p>Fichas completas, edición y soporte por cuenta.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></div><div><h3>Estadísticas y edades</h3><p>Búsquedas, comportamiento y segmentación por rango etario.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><h3>Combustibles CNE</h3><p>Descarga automática semanal y estadísticas de precios.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v12H7l-3 3z"/></svg></div><div><h3>Mensajes y reseñas</h3><p>Responde, modera y mantén la plataforma sana.</p></div></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></div><div><h3>Reportes y alertas</h3><p>Supervisa el estado del sistema y las acciones pendientes.</p></div></div>
+  </div>
+  </div>
+
+  <div class="links">
+    <a href="legal/terminos.html">📄 Términos y Condiciones de Uso</a>
+    <a href="legal/privacidad.html">🔒 Política de Privacidad y Protección de Datos (Ley 21.719)</a>
+  </div>
+
+  <div class="center">
+    <div class="ver">MercaDate · Hecho en Chile 🇨🇱<br>Contacto: contacto@mercadate.cl · www.mercadate.cl<br>Términos vigentes: v2.3 — 18 de junio de 2026</div>
+    <a class="volver" href="javascript:history.back()">← Volver</a>
+  </div>
+</div>
+</body>
+</html>
