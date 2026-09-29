@@ -105,7 +105,7 @@ window.productos = (function () {
     const local = STATE.activeLocal;
     api.post('/clicks/whatsapp', { local_id: local.id, producto_id: productoId }).catch(()=>{});
     const num = String(numero).replace(/[^0-9]/g, '');
-    const msg = encodeURIComponent(`Hola, vengo de MercaDate, quiero consultar por: ${nombreProducto}`);
+    const msg = encodeURIComponent(`Hola, vengo de Ápale!, quiero consultar por: ${nombreProducto}`);
     window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   }
 
@@ -120,7 +120,7 @@ window.productos = (function () {
 
   function urlWhatsapp(numero, nombreProducto) {
     const num = numero.replace(/[^0-9]/g, '');
-    const msg = encodeURIComponent(`Hola, vengo de MercaDate, quiero consultar por: ${nombreProducto}`);
+    const msg = encodeURIComponent(`Hola, vengo de Ápale!, quiero consultar por: ${nombreProducto}`);
     return `https://wa.me/${num}?text=${msg}`;
   }
 

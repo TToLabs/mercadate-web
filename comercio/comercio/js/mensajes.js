@@ -84,7 +84,7 @@ window.mensajes = (function () {
       const admin = m.autor_tipo === 'admin';
       return `<div class="cmsg-brow ${admin?'admin':'yo'}">
         <div class="cmsg-bubble ${admin?'admin':'yo'}">
-          <div class="cmsg-bubble-autor">${esc(m.autor_nombre || (admin?'MercaDate':'Tú'))}</div>
+          <div class="cmsg-bubble-autor">${esc(m.autor_nombre || (admin?'Ápale!':'Tú'))}</div>
           <div>${esc(m.contenido)}</div>
         </div></div>`;
     }).join('');

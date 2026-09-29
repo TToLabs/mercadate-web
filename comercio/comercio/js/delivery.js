@@ -85,7 +85,7 @@ window.cdelivery = (function () {
         <div class="dlv-wide"><label>Métodos de pago aceptados</label>
           <input type="text" id="dlvPagos" placeholder="efectivo, transferencia" value="${escapeHtml(c.metodos_pago || '')}"></div>
       </div>
-      <p class="dlv-nota">MercaDate no procesa el pago ni el reparto: el despacho y el cobro son tuyos.
+      <p class="dlv-nota">Ápale! no procesa el pago ni el reparto: el despacho y el cobro son tuyos.
       Estos datos solo se le muestran al cliente.</p>
       <button class="btn btn-primary" onclick="cdelivery.guardarConfig()">Guardar configuración</button>`;
   }

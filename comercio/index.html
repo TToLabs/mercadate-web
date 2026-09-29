@@ -7,11 +7,11 @@
 -->
 <html lang="es">
 <head>
-  <script>window.MD_APP_VERSION = 4;</script>
-  <script src="beta-shim.js?v=4"></script>
+  <script>window.MD_APP_VERSION = 6;</script>
+  <script src="beta-shim.js?v=6"></script>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>MercaDate — Portal Comercio</title>
+<title>Ápale! — Portal Comercio</title>
 <link rel="stylesheet" href="vendor/fonts/fonts.css?v=20260628-vendor"/>
 <link rel="stylesheet" href="comercio/css/styles.css?v=20260721-dlv1"/>
 <link rel="stylesheet" href="comercio-v6/css/comercio-formal.css?v=20260928-categorias"/>
@@ -58,7 +58,7 @@
   <div class="login-card">
     <div class="login-header">
       <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="MercaDate" style="height:54px;width:54px;object-fit:contain;display:block;margin:0 auto 8px;border-radius:12px" onerror="this.style.display='none'">
-      <div class="logo-txt">Merca<em>date</em></div>
+      <div class="logo-txt">Ápale<em>!</em></div>
       <div style="font-size:12px;color:var(--muted,#94a3b8);margin:2px 0 10px">El mejor precio, a la vuelta de la esquina</div>
       <h2>Portal del Comercio</h2>
       <p>Ingresa para gestionar tu negocio</p>
@@ -93,7 +93,7 @@
   <div class="login-card">
     <div class="login-header">
       <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="MercaDate" style="height:54px;width:54px;object-fit:contain;display:block;margin:0 auto 8px;border-radius:12px" onerror="this.style.display='none'">
-      <div class="logo-txt">Merca<em>date</em></div>
+      <div class="logo-txt">Ápale<em>!</em></div>
       <h2>Crear nueva contraseña</h2>
       <p>Portal del Comercio</p>
     </div>
@@ -112,7 +112,7 @@
 <div id="selectLocalScreen">
   <div class="login-card" style="max-width:520px">
     <div class="login-header">
-      <div class="logo-txt">Merca<em>date</em></div>
+      <div class="logo-txt">Ápale<em>!</em></div>
       <h2 id="selectTitle">Selecciona tu Local</h2>
       <p>Elige el local que deseas administrar</p>
     </div>
@@ -125,7 +125,7 @@
 <div id="registerScreen">
   <div class="login-card">
     <div class="login-header">
-      <div class="logo-txt">Merca<em>date</em></div>
+      <div class="logo-txt">Ápale<em>!</em></div>
       <h2>Crear Cuenta</h2>
       <p>Tu primer local empieza con plan Gratuito</p>
     </div>
@@ -374,7 +374,7 @@
     <aside class="sidebar">
       <!-- Cabecera fija -->
       <div class="side-head">
-        <div class="logo">Merca<em>date</em></div>
+        <div class="logo">Ápale<em>!</em></div>
         <div class="logo-context" id="sideLocalName" onclick="app.mostrar('locales')" title="Ver todos mis locales">📍 Cargando...</div>
 
         <!-- Fila de acciones del local: estado + vista pública (compacto) -->
@@ -422,6 +422,16 @@
     </aside>
     <!-- Móvil (≤820px): el sidebar se vuelve hoja inferior "Más"; fondo para cerrarla -->
     <div class="cv6-mas-fondo" onclick="cv6Mas(false)"></div>
+
+    <!-- Barra superior solo móvil: el logo vive en el sidebar, que en celular
+         queda oculto dentro de la hoja "Más" — sin esto la marca no se ve nunca. -->
+    <div class="cv6-topbar-mobile">
+      <img src="img/Logo_MercaDate/Logo_MercaDate1.png" alt="" onerror="this.style.display='none'">
+      <div class="cv6-topbar-txt">
+        <span class="logo">Ápale<em>!</em></span>
+        <span class="cv6-topbar-slogan">El mejor precio, a la vuelta de la esquina</span>
+      </div>
+    </div>
 
     <main class="main">
 
@@ -1068,7 +1078,7 @@
     <!-- Tarjeta imprimible -->
     <div id="qrPrintCard" style="background:#fff;border-radius:16px;padding:0;margin:16px auto;max-width:340px;border:2px solid #FF8A00;overflow:hidden">
       <div style="background:#FF8A00;padding:12px 16px;text-align:center">
-        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#fff;letter-spacing:-0.01em">📍 MercaDate</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#fff;letter-spacing:-0.01em">📍 Ápale!</div>
         <div style="font-size:11px;color:rgba(255,255,255,0.92);font-weight:600;margin-top:2px">El mejor precio a la vuelta de la esquina</div>
       </div>
       <div style="padding:18px 24px 24px">
@@ -1079,7 +1089,7 @@
         <div style="font-weight:700;font-size:13px;color:#FF8A00;margin-top:14px">📲 Escanea para registrar tu visita</div>
         <div style="font-size:10px;color:#94a3b8;margin-top:4px" id="qrCodigo">—</div>
         <div style="border-top:1px solid #f1f1f1;margin-top:14px;padding-top:10px">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#FF8A00">📍 MercaDate</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#FF8A00">📍 Ápale!</div>
           <div style="font-size:9px;color:#cbd5e1;margin-top:2px">Descarga la app y descubre los mejores precios</div>
         </div>
       </div>

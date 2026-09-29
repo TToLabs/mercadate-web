@@ -58,6 +58,7 @@ html.cv6-dia{
 html.cv6-dia body{background:#F7F8FA!important;color:#14161C!important}
 html.cv6-dia .sidebar{background:#FFFFFF!important}
 html.cv6-dia .main{background:#F7F8FA!important}
+html.cv6-dia .cd-tab.active,html.cv6-dia .cv6-cat-chip.active{color:#FFFFFF!important}
 html.cv6-dia .logo{color:#14161C!important}
 html.cv6-dia .logo em{color:#14161C!important;font-style:normal}
 html.cv6-dia .logo-context{color:#5C6270!important}
@@ -152,10 +153,19 @@ html.cv6-dia #mbPlanNombre{color:#14161C!important}
    Escritorio no cambia (sidebar). En celular el sidebar pasa a ser la hoja
    "Más" que sube desde abajo, y la navegación principal va en la barra. */
 .cv6-bnav,.cv6-mas-fondo{display:none}
+.cv6-topbar-mobile{display:none}
 @media (max-width:820px){
   .app-wrap{display:block!important}
+  .cv6-topbar-mobile{
+    display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:890;
+    padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;
+    background:var(--surface);border-bottom:1px solid var(--border)}
+  .cv6-topbar-mobile img{width:30px;height:30px;object-fit:contain;border-radius:8px;flex:none}
+  .cv6-topbar-txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .cv6-topbar-txt .logo{font-size:16px!important;line-height:1.1}
+  .cv6-topbar-slogan{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .main{width:100%!important;margin:0!important;padding:18px 16px calc(84px + env(safe-area-inset-bottom))!important;
-        height:100dvh!important;overflow-y:auto!important}
+        height:calc(100dvh - 58px)!important;overflow-y:auto!important}
   .page-header h2{font-size:20px!important}
 
   .cv6-bnav{

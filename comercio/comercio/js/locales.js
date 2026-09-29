@@ -383,7 +383,7 @@ window.locales = (function () {
         ctx.fillText($('qrCodigo').textContent || '', W/2, 404);
         ctx.fillStyle = '#cbd5e1';
         ctx.font = '10px Inter, sans-serif';
-        ctx.fillText('MercaDate · El mejor precio a la vuelta de la esquina', W/2, 510);
+        ctx.fillText('Ápale! · El mejor precio a la vuelta de la esquina', W/2, 510);
         resolve(canvas);
       };
 
