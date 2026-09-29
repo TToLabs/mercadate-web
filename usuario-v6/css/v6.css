@@ -51,11 +51,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   border-bottom:1px solid var(--card-brd);
 }
 .md-logo{display:flex;align-items:center;gap:9px;flex:none}
-.md-logo-mark{
-  width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#f0a33a,#c96a00);
-  color:#fff;font-weight:800;font-size:18px;
-}
+.md-logo-mark{width:34px;height:34px;border-radius:9px;object-fit:contain;flex:none}
 .logo-text{font-size:19px;font-weight:800;letter-spacing:-.3px;color:var(--txt)}
 .md-search-wrap{position:relative;flex:1 1 260px;max-width:460px;min-width:120px}
 #headerSearchInput{

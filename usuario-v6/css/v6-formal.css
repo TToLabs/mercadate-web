@@ -93,7 +93,7 @@ html.theme-dia body{background:#FFFFFF!important;color:#14161C}
 /* Header */
 html.theme-dia .md-header-v6{background:#FFFFFF!important;border-bottom:1px solid #EDEEF2!important}
 html.theme-dia .md-header-v6 .logo-text{color:#14161C!important;-webkit-text-fill-color:#14161C!important}
-html.theme-dia .md-logo-mark{background:#14161C;color:#fff;border-radius:8px;width:30px;height:30px;font-size:15px}
+html.theme-dia .md-logo-mark{border-radius:8px;width:30px;height:30px}
 html.theme-dia #headerSearchInput{background:#F5F6F8;border:1px solid #E9EBEF;color:#14161C}
 html.theme-dia #headerSearchInput::placeholder{color:#8A8F9C}
 html.theme-dia .md-header-bell{color:#5C6270}

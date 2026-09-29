@@ -3,8 +3,8 @@
      Mismo comportamiento que /comercio/splash.html: pasa a index.html a los 6,5 s o al tocar. -->
 <html lang="es">
 <head>
-  <script>window.MD_APP_VERSION = 6;</script>
-  <script src="beta-shim.js?v=6"></script>
+  <script>window.MD_APP_VERSION = 7;</script>
+  <script src="beta-shim.js?v=7"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Ápale! — Portal Comercio</title>
@@ -24,7 +24,8 @@
        font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;
        display:flex;justify-content:center;padding:calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 20px)}
   .w{width:100%;max-width:440px;display:flex;flex-direction:column;gap:22px}
-  .brand{font-weight:800;font-size:20px;letter-spacing:-.3px;text-align:center}
+  .brand{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:20px;letter-spacing:-.3px}
+  .brand img{width:28px;height:28px;object-fit:contain;border-radius:7px}
   .hero{border-radius:22px;padding:34px 24px;text-align:center;color:#FFFFFF;
         background:linear-gradient(135deg,var(--hero1),var(--hero2))}
   .ico{width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;margin:0 auto 20px}
@@ -48,7 +49,7 @@
 </head>
 <body>
 <div class="w">
-  <div class="brand">Ápale!</div>
+  <div class="brand"><img src="comercio-v6/img/icono-app.png" alt="" onerror="this.style.display='none'">Ápale!</div>
 
   <section class="hero">
     <div class="ico">
