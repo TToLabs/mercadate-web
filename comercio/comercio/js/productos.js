@@ -23,13 +23,41 @@ window.productos = (function () {
   // ────────────────────────────────────────────────────────────────────────
   // RENDER TABLA DE PRODUCTOS
   // ────────────────────────────────────────────────────────────────────────
+  // Categoría elegida en los chips del inventario ('' = Todas)
+  let catFiltro = '';
+
+  // Chips de categoría: solo las que tienen productos (no el catálogo fijo completo)
+  function renderCategoriaChips() {
+    const cont = $('catChips');
+    if (!cont) return;
+    const local = STATE.activeLocal;
+    const productos_ = (local && local.productos) || [];
+    const cats = [...new Set(productos_.map(p => p.categoria || 'General'))].sort((a, b) => a.localeCompare(b, 'es'));
+    if (catFiltro && !cats.includes(catFiltro)) catFiltro = '';
+    if (cats.length <= 1) { cont.innerHTML = ''; cont.hidden = true; return; }
+    cont.hidden = false;
+    const chip = (valor, etiqueta) => {
+      const n = valor ? productos_.filter(p => (p.categoria || 'General') === valor).length : productos_.length;
+      return `<button type="button" class="cv6-cat-chip${catFiltro === valor ? ' active' : ''}" onclick="productos.filtrarCategoria('${app.escapeHtml(valor).replace(/'/g, "\\'")}')">${app.escapeHtml(etiqueta)} <b>${n}</b></button>`;
+    };
+    cont.innerHTML = chip('', 'Todas') + cats.map(c => chip(c, c)).join('');
+  }
+
+  function filtrarCategoria(cat) {
+    catFiltro = cat;
+    renderCategoriaChips();
+    renderTabla();
+  }
+
   function renderTabla() {
     const local = STATE.activeLocal;
     if (!local) return;
+    renderCategoriaChips();
     const query = ($('busqueda')?.value || '').toLowerCase();
     const filtrados = (local.productos || []).filter(p =>
-      (p.nombre || '').toLowerCase().includes(query) ||
-      (p.marca  || '').toLowerCase().includes(query)
+      ((p.nombre || '').toLowerCase().includes(query) ||
+       (p.marca  || '').toLowerCase().includes(query)) &&
+      (!catFiltro || (p.categoria || 'General') === catFiltro)
     );
 
     const tbody = $('tablaProductos');
@@ -598,6 +626,6 @@ window.productos = (function () {
     subirFoto, eliminarFoto, clickWhatsapp, duplicar,
     cambiarTabAgregar, descargarTemplate, descargarInventario,
     onFileCSV, importarMasivo, limpiarCarga,
-    cargarAlertas, poblarCategorias
+    cargarAlertas, poblarCategorias, filtrarCategoria
   };
 })();

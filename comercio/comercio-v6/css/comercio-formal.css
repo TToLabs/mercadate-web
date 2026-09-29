@@ -15,6 +15,21 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
 .nav-btn .cv6-ic{flex:none;opacity:.85}
 .nav-btn.active{font-weight:700!important;box-shadow:none!important}
 .nav-btn .badge-alert{margin-left:auto}
+.side-sep{height:1px;background:var(--border);margin:10px 14px}
+.cd-accion-rapida{display:block;width:100%;font-size:16px!important;font-weight:700!important;padding:14px!important;margin-bottom:16px}
+.cd-dash-panels{display:block!important;padding:16px!important;height:auto!important}
+.cd-tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
+.cd-tab{flex:none;border:0;background:var(--bg);color:var(--muted);font:600 13px 'Inter',system-ui,sans-serif;padding:8px 14px;border-radius:999px;cursor:pointer}
+.cd-tab.active{background:var(--accent);color:#0B0D13}
+.cd-tab-panel{display:none;max-height:52vh;overflow-y:auto}
+.cd-tab-panel.active{display:block}
+.cv6-cat-chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.cv6-cat-chips[hidden]{display:none}
+.cv6-cat-chip{flex:none;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:600 12.5px 'Inter',system-ui,sans-serif;padding:7px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.cv6-cat-chip b{font-weight:700;opacity:.7;margin-left:3px}
+.cv6-cat-chip.active{background:var(--accent);color:#0B0D13;border-color:var(--accent)}
+.cv6-cat-chip.active b{opacity:.65}
+.cv6-bn-badge.cv6-bn-dot{left:auto;right:calc(50% - 20px);width:8px;height:8px;min-width:0;padding:0;border-radius:50%;background:#e5484d}
 .cv6-tema-btn .cv6-tema-noche{display:none}
 html.cv6-dia .cv6-tema-btn .cv6-tema-dia{display:none}
 html.cv6-dia .cv6-tema-btn .cv6-tema-noche{display:inline}
@@ -171,7 +186,7 @@ html.cv6-dia #mbPlanNombre{color:#14161C!important}
   #toast{bottom:calc(76px + env(safe-area-inset-bottom))!important}
   .cv6-bnav{z-index:960}
   /* En la hoja no se repite lo que ya está en la barra; grupos siempre abiertos */
-  .sidebar #nav-cdashboard,.sidebar #nav-productos,.sidebar #nav-alertas,.sidebar #nav-mensajes{display:none!important}
+  .sidebar #nav-cdashboard,.sidebar #nav-productos,.sidebar #nav-delivery{display:none!important}
   .sidebar .side-group-body,.sidebar .side-group.collapsed .side-group-body{display:flex!important;max-height:none!important;opacity:1!important}
   .sidebar .side-group-head .sgchev{display:none}
   .sidebar .side-group-head{pointer-events:none}
@@ -205,3 +220,7 @@ html.cv6-dia .cv6-bn.on{color:#14161C}
 .cv6-scan-btns .btn{flex:1;min-height:44px}
 .cv6-scan-otro{margin-top:10px;width:100%}
 .cv6-scan-stock b.cv6-sin{font-size:14px;font-weight:600;color:var(--muted)}
+.cv6-scan-ficha{display:flex;gap:12px;align-items:center;margin-top:10px}.cv6-scan-ficha img{width:72px;height:72px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid var(--border)}
+.cv6-scan [hidden]{display:none!important}
+.cv6-scan-cont{display:flex;gap:6px}.cv6-scan-cont input{flex:1;min-width:0}.cv6-scan-cont select{width:auto;flex:0 0 auto}
+.cv6-scan-guia{margin-top:10px}.cv6-scan-guia video{width:100%;max-height:52vh;border-radius:12px;background:#000;display:block;margin-bottom:10px}

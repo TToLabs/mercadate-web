@@ -139,6 +139,12 @@ window.cdashboard = (function () {
       </div>`).join('');
   }
 
+  // ── Pestañas del panel de detalle (menos scroll: 1 tarjeta, no 3 apiladas) ──
+  function tab(nombre) {
+    document.querySelectorAll('.cd-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === nombre));
+    document.querySelectorAll('.cd-tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === nombre));
+  }
+
   // ── Acciones de notificaciones ────────────────────────────────────────────
   function irASinFoto() {
     app.mostrar('productos');
@@ -322,5 +328,5 @@ window.cdashboard = (function () {
     } else { toast('Error al guardar', 'err'); }
   }
 
-  return { cargar, abrirEstadoModal, guardarEstado, abrirVistaPublica, irASinFoto, irADesactualizados, subirFotoDe, guardarPrecioInline };
+  return { cargar, abrirEstadoModal, guardarEstado, abrirVistaPublica, irASinFoto, irADesactualizados, subirFotoDe, guardarPrecioInline, tab };
 })();

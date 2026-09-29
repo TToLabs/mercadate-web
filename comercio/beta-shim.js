@@ -117,6 +117,22 @@
       if (ruta === '/comercio/mis-locales') return Promise.resolve(responder(misLocales()));
       if (/^\/comercio\/dashboard\//.test(ruta)) return Promise.resolve(responder(dashboard()));
       if (/reportes|conversaciones|historial-soporte|pedidos/.test(ruta)) return Promise.resolve(responder([]));
+      // Ficha por código: catálogo del demo y, si no está, Open Food Facts directo (como el servidor)
+      if ((m = ruta.match(/^\/codigo-barras\/(\d{6,18})$/))) {
+        var cat = (local().catalogo || {})[m[1]];
+        if (cat && cat.nombre) return Promise.resolve(responder(Object.assign({ success: true, encontrado: true, origen: 'Catálogo MercaDate' }, cat)));
+        return fetchOriginal('https://world.openfoodfacts.org/api/v2/product/' + m[1] + '.json?fields=product_name,product_name_es,brands,quantity,image_front_url')
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            var p = j && j.status === 1 && j.product, nombre = p ? String(p.product_name_es || p.product_name || '').trim() : '';
+            if (!nombre) return responder({ success: true, encontrado: false });
+            var img = String(p.image_front_url || '');
+            if (img.indexOf('https://images.openfoodfacts.org/') !== 0) img = '';
+            return responder({ success: true, encontrado: true, nombre: nombre, marca: String(p.brands || '').split(',')[0].trim(),
+              contenido: String(p.quantity || '').trim(), imagen_url: img, origen: 'Open Food Facts' });
+          })
+          .catch(function () { return responder({ success: true, encontrado: false, sin_conexion: true }); });
+      }
       return Promise.resolve(responder(DEMO, 503));
     }
     if (ruta === '/owner-login') return Promise.resolve(responder(misLocales()));
@@ -160,6 +176,26 @@
       l.productos.forEach(function (x) { if (!x.id) { x.id = sigId(); } });
       persistir();
       return Promise.resolve(responder({ success: true, local: l }));
+    }
+    // Catálogo compartido (en el demo vive en el teléfono; la foto queda como data URL)
+    if ((m = ruta.match(/^\/catalogo\/(\d{6,18})$/)) && metodo === 'POST') {
+      var l2 = local(); l2.catalogo = l2.catalogo || {};
+      var prev = l2.catalogo[m[1]] || {};
+      var img2 = /^data:image\/(jpeg|webp);base64,/.test(cuerpo.imagen || '') ? cuerpo.imagen : '';
+      var f2 = l2.catalogo[m[1]] = {
+        nombre: prev.nombre || cuerpo.nombre || '', marca: prev.marca || cuerpo.marca || '',
+        contenido: prev.contenido || cuerpo.contenido || '', imagen_url: prev.imagen_url || img2
+      };
+      persistir();
+      return Promise.resolve(responder(Object.assign({ success: true, encontrado: true, origen: 'Comercio MercaDate' }, f2)));
+    }
+    if ((m = ruta.match(/^\/productos\/(\d+)\/foto-remota$/)) && metodo === 'POST') {
+      var pf = local().productos.find(function (x) { return x.id === +m[1]; });
+      if (!pf) return Promise.resolve(responder({ success: false, message: 'Producto no encontrado.' }, 404));
+      pf.imagenes = pf.imagenes || [];
+      var im = { id: Date.now(), ruta: String(cuerpo.url || ''), orden: pf.imagenes.length };
+      pf.imagenes.push(im); persistir();
+      return Promise.resolve(responder({ success: true, imagen: im }));
     }
     if ((m = ruta.match(/^\/locales\/\d+\/estado-operativo$/))) {
       local().estado_operativo = cuerpo.estado || 'abierto'; persistir();
