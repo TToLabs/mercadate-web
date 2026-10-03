@@ -15,6 +15,7 @@ window.cdashboard = (function () {
     renderEstadoLocal(r.data.local);
     renderNotificaciones(r.data);
     renderSinFoto(r.data.sin_foto);
+    renderStockBajo(r.data.stock_bajo);
     renderDesactualizados(r.data.desactualizados);
     renderTopClicks(r.data.top_clicks_productos);
   }
@@ -54,10 +55,13 @@ window.cdashboard = (function () {
         ? (dias_hasta_renovacion <= 0 ? 'Vencido' : `Renueva en ${dias_hasta_renovacion} días`)
         : 'Plan gratuito'}</div>`;
 
+    // El estado (abierto/pausado/cerrado) ya se ve siempre arriba del sidebar — repetirlo
+    // acá era ruido. En su lugar: lo que de verdad hay que mirar cada día.
+    const stockN = (d.stock_bajo || []).length;
     $('cdKpiEstado').innerHTML = `
-      <div class="cd-kpi-label">🏪 Estado del Local</div>
-      <div class="cd-kpi-value">${badgeEstado(local.estado_operativo)}</div>
-      <div class="cd-kpi-sub">${local.estado_mensaje || 'Sin mensaje activo'}</div>`;
+      <div class="cd-kpi-label">📉 Stock bajo</div>
+      <div class="cd-kpi-value" style="color:${stockN ? 'var(--warn)' : 'var(--ok)'}">${stockN}</div>
+      <div class="cd-kpi-sub">${stockN ? 'productos con 5 o menos' : 'todo con stock sano'}</div>`;
   }
 
   function badgeEstado(estado) {
@@ -159,6 +163,20 @@ window.cdashboard = (function () {
   }
 
   // ── Productos sin foto ────────────────────────────────────────────────────
+  function renderStockBajo(stockBajo) {
+    const cont = $('cdStockBajo');
+    if (!cont) return;
+    if (!stockBajo || !stockBajo.length) {
+      cont.innerHTML = '<p style="color:var(--muted);text-align:center;padding:14px">✅ Ningún producto con stock bajo</p>';
+      return;
+    }
+    cont.innerHTML = stockBajo.slice(0, 8).map(p =>
+      `<div class="cd-list-item">
+        <span>${p.stock === 0 ? '🔴' : '🟡'} ${app.escapeHtml(p.nombre)}</span>
+        <span style="font-weight:700;color:${p.stock === 0 ? 'var(--err)' : 'var(--warn)'}">${p.stock}</span>
+      </div>`).join('') + (stockBajo.length > 8 ? `<p style="font-size:11px;color:var(--muted);text-align:right;padding:6px">+ ${stockBajo.length - 8} más</p>` : '');
+  }
+
   function renderSinFoto(sinFoto) {
     const cont = $('cdSinFoto');
     if (!cont) return;

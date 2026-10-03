@@ -462,21 +462,26 @@
         <!-- Un solo panel con pestañas: antes eran 3 tarjetas apiladas (más scroll) -->
         <div class="card cd-dash-panels">
           <div class="cd-tabs" role="tablist">
-            <button class="cd-tab active" data-tab="cdSinFoto" onclick="cdashboard.tab('cdSinFoto')">Sin foto</button>
-            <button class="cd-tab" data-tab="cdDesact" onclick="cdashboard.tab('cdDesact')">Sin actualizar</button>
+            <button class="cd-tab active" data-tab="cdStockBajo" onclick="cdashboard.tab('cdStockBajo')">Stock bajo</button>
             <button class="cd-tab" data-tab="cdTopClicks" onclick="cdashboard.tab('cdTopClicks')">Más interesan</button>
+            <button class="cd-tab" data-tab="cdSinFoto" onclick="cdashboard.tab('cdSinFoto')">Sin foto</button>
+            <button class="cd-tab" data-tab="cdDesact" onclick="cdashboard.tab('cdDesact')">Sin actualizar</button>
           </div>
-          <div class="cd-tab-panel active" data-panel="cdSinFoto">
+          <div class="cd-tab-panel active" data-panel="cdStockBajo">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">5 unidades o menos (solo productos con stock controlado)</p>
+            <div id="cdStockBajo"></div>
+          </div>
+          <div class="cd-tab-panel" data-panel="cdTopClicks">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Los que más clics de WhatsApp reciben (30 días) — el proxy más cercano a "se venden más" hasta que exista un registro de ventas</p>
+            <div id="cdTopClicks"></div>
+          </div>
+          <div class="cd-tab-panel" data-panel="cdSinFoto">
             <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Productos con foto reciben 3x más clics</p>
             <div id="cdSinFoto"></div>
           </div>
           <div class="cd-tab-panel" data-panel="cdDesact">
             <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Más de 30 días sin cambios</p>
             <div id="cdDesact"></div>
-          </div>
-          <div class="cd-tab-panel" data-panel="cdTopClicks">
-            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Top productos según clics en WhatsApp (30 días)</p>
-            <div id="cdTopClicks"></div>
           </div>
         </div>
       </section>
